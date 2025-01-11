@@ -7,6 +7,122 @@ import 'package:stock_rental/model/product_filed.dart';
 import 'package:stock_rental/repo/product_db_helper.dart';
 import 'package:stock_rental/order/retail_bill_preview.dart';
 
+class SearchableDropdown extends StatelessWidget {
+  final List<Customer> customers;
+  final Customer? selectedCustomer;
+  final Function(Customer?) onChanged;
+
+  const SearchableDropdown({
+    Key? key,
+    required this.customers,
+    required this.selectedCustomer,
+    required this.onChanged,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<Customer>(
+      initialValue: selectedCustomer,
+      onSelected: onChanged,
+      constraints: BoxConstraints(maxHeight: 400),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade400),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.person, color: Colors.grey),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                selectedCustomer?.name ?? 'Select Customer',
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+            Icon(Icons.arrow_drop_down),
+          ],
+        ),
+      ),
+      offset: Offset(0, 40),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      itemBuilder: (context) {
+        return [
+          PopupMenuItem<Customer>(
+            enabled: false,
+            child: SearchField(
+              onChanged: (query) {
+                // Rebuild the popup with filtered results
+                Navigator.pop(context);
+                Future.delayed(Duration(milliseconds: 50), () {
+                  showMenu(
+                    context: context,
+                    position: RelativeRect.fromLTRB(0, 40, 0, 0),
+                    items: _buildItems(query),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  );
+                });
+              },
+            ),
+          ),
+          ...customers
+              .map((customer) => PopupMenuItem<Customer>(
+                    value: customer,
+                    child: Text(customer.name),
+                  ))
+              .toList(),
+        ];
+      },
+    );
+  }
+
+  List<PopupMenuEntry<Customer>> _buildItems(String? query) {
+    var filteredCustomers = customers;
+    if (query != null && query.isNotEmpty) {
+      filteredCustomers = customers
+          .where((c) =>
+              c.name.toLowerCase().contains(query.toLowerCase()) ||
+              c.phoneNumber.contains(query))
+          .toList();
+    }
+
+    return [
+      PopupMenuItem<Customer>(
+        enabled: false,
+        child: SearchField(onChanged: (q) => _buildItems(q)),
+      ),
+      ...filteredCustomers.map((customer) => PopupMenuItem<Customer>(
+            value: customer,
+            child: Text(customer.name),
+          )),
+    ];
+  }
+}
+
+class SearchField extends StatelessWidget {
+  final Function(String) onChanged;
+
+  const SearchField({Key? key, required this.onChanged}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      autofocus: true,
+      decoration: InputDecoration(
+        hintText: 'Search customer...',
+        prefixIcon: Icon(Icons.search),
+        border: OutlineInputBorder(),
+        isDense: true,
+        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      ),
+      onChanged: onChanged,
+    );
+  }
+}
+
 class CreateOrderScreen extends StatefulWidget {
   final List<Customer> customers;
   final List<Product> availableProducts;
@@ -169,21 +285,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: DropdownButtonFormField<Customer>(
-                          value: selectedCustomer,
-                          decoration: InputDecoration(
-                            labelText: 'Customer',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: widget.customers
-                              .map((c) => DropdownMenuItem(
-                                    value: c,
-                                    child: Text(c.name),
-                                  ))
-                              .toList(),
-                          onChanged: (v) =>
-                              setState(() => selectedCustomer = v),
-                          validator: (v) => v == null ? 'Required' : null,
+                        child: SearchableDropdown(
+                          customers: widget.customers,
+                          selectedCustomer: selectedCustomer,
+                          onChanged: (customer) {
+                            setState(() {
+                              selectedCustomer = customer;
+                            });
+                          },
                         ),
                       ),
                       SizedBox(width: 16),
