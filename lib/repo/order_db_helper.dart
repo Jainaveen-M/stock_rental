@@ -33,17 +33,24 @@ class OrderDatabase {
 
   // Fetch all orders
   Future<List<Order>> getAllOrders() async {
-    final snapshot = await _orderStore.find(_db);
-    return snapshot.map((record) => Order.fromMap(record.value)).toList();
+    final db = await _db;
+    final records = await _orderStore.find(db);
+    return records.map((record) {
+      final orderMap = Map<String, dynamic>.from(record.value);
+      return Order.fromMap(orderMap);
+    }).toList();
   }
 
   // Update an order
   Future<void> updateOrder(Order order) async {
-    var record = await _orderStore.findFirst(_db,
-        finder: Finder(filter: Filter.byKey(order.orderId)));
-    if (record != null) {
-      await _orderStore.record(order.orderId as int).put(_db, order.toMap());
-    }
+    final db = await _db;
+    await _orderStore.update(
+      db,
+      order.toMap(),
+      finder: Finder(
+        filter: Filter.equals('orderId', order.orderId),
+      ),
+    );
   }
 
   // Close the database

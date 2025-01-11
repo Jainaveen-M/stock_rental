@@ -79,7 +79,7 @@ class DashboardScreen extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.dashboard),
-              title: const Text('Dashboard'),
+              title: const Text('Product'),
               onTap: () {
                 Navigator.push(
                   context,
@@ -88,11 +88,6 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 );
               },
-            ),
-            ListTile(
-              leading: const Icon(Icons.shopping_cart),
-              title: const Text('Product'),
-              onTap: () {},
             ),
             ListTile(
               leading: const Icon(Icons.receipt_long),

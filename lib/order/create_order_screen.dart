@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:uuid/uuid.dart';
 import 'package:stock_rental/model/order.dart';
 import 'package:stock_rental/model/product.dart';
 import 'package:stock_rental/model/customer.dart';
 import 'package:stock_rental/model/product_filed.dart';
+import 'package:stock_rental/repo/product_db_helper.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   final List<Customer> customers;
   final List<Product> availableProducts;
   final Function(Order) onCreate;
+  final ProductDatabase productDatabase;
 
   const CreateOrderScreen({
     Key? key,
     required this.customers,
     required this.availableProducts,
     required this.onCreate,
+    required this.productDatabase,
   }) : super(key: key);
 
   @override
@@ -35,7 +37,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   void _addProduct() {
     setState(() {
-      productFields.add(ProductField());
+      productFields.add(ProductField(
+        productId: widget.availableProducts.first.id,
+        productName: widget.availableProducts.first.name,
+      ));
     });
   }
 
@@ -45,7 +50,16 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     });
   }
 
-  void _saveOrder() {
+  Future<void> _updateProductRentals(List<ProductField> products) async {
+    for (var product in products) {
+      await widget.productDatabase.updateProductRental(
+        product.productId,
+        product.quantity,
+      );
+    }
+  }
+
+  void _saveOrder() async {
     if (selectedCustomer == null || productFields.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please fill all required fields')),
@@ -53,15 +67,35 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       return;
     }
 
+    // Check if enough stock is available
+    for (var product in productFields) {
+      final availableProduct = widget.availableProducts.firstWhere(
+        (p) => p.id == product.productId,
+      );
+      int available = availableProduct.stock - (availableProduct.rented ?? 0);
+      if (product.quantity > available) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Not enough stock for ${availableProduct.name}. Available: $available',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
     final newOrder = Order(
-      orderId: Uuid().v4(),
+      orderId: DateTime.now().millisecondsSinceEpoch,
       customerName: selectedCustomer!.name,
-      customerId: selectedCustomer!.id,
+      customerId: int.parse(selectedCustomer!.id),
       orderDate: DateTime.now(),
       products: productFields,
       status: OrderStatus.active,
     );
 
+    await _updateProductRentals(productFields);
     widget.onCreate(newOrder);
   }
 
@@ -74,9 +108,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     }
 
     final previewOrder = Order(
-      orderId: Uuid().v4(),
+      orderId: DateTime.now().millisecondsSinceEpoch,
       customerName: selectedCustomer!.name,
-      customerId: selectedCustomer!.id,
+      customerId: int.parse(selectedCustomer!.id),
       orderDate: DateTime.now(),
       products: productFields,
       status: OrderStatus.active,

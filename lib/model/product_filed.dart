@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 enum RentalStatus { active, closed, expired, pending }
 
 class ProductField {
-  String productId;
+  int productId;
   String productName;
   int quantity;
   DateTime? startDate;
@@ -13,12 +13,13 @@ class ProductField {
   double? price;
 
   ProductField({
-    this.productId = '',
+    required this.productId,
     this.productName = '',
     this.quantity = 1,
     this.startDate,
     this.endDate,
     this.status = RentalStatus.active,
+    this.price,
   });
 
   Map<String, dynamic> toMap() => {
@@ -28,10 +29,11 @@ class ProductField {
         'startDate': startDate?.toIso8601String(),
         'endDate': endDate?.toIso8601String(),
         'status': status.toString(),
+        'price': price,
       };
 
   factory ProductField.fromMap(Map<String, dynamic> map) => ProductField(
-        productId: map['productId'] ?? '',
+        productId: map['productId'] as int,
         productName: map['productName'] ?? '',
         quantity: map['quantity'] ?? 1,
         startDate:
@@ -41,6 +43,7 @@ class ProductField {
           (e) => e.toString() == map['status'],
           orElse: () => RentalStatus.active,
         ),
+        price: map['price']?.toDouble(),
       );
 
   bool get isActive => status == RentalStatus.active;

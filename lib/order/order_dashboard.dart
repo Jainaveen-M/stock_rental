@@ -60,7 +60,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
   List<Order> _getFilteredOrders() {
     String query = searchController.text.toLowerCase();
     return orders.where((order) {
-      bool matchesSearch = order.orderId.toLowerCase().contains(query) ||
+      bool matchesSearch = order.orderId.toString().contains(query) ||
           order.customerName.toLowerCase().contains(query);
 
       if (filterStatus == 'All') return matchesSearch;
@@ -80,6 +80,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
         builder: (context) => CreateOrderScreen(
           customers: customers,
           availableProducts: products,
+          productDatabase: _productDatabase,
           onCreate: (Order newOrder) async {
             await _orderDatabase.saveOrder(newOrder);
             _loadOrders();
@@ -164,7 +165,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
               ? MaterialStateProperty.all(Colors.red.shade100)
               : null,
           cells: [
-            DataCell(Text(order.orderId)),
+            DataCell(Text(order.orderId.toString())),
             DataCell(Text(order.customerName)),
             DataCell(Text(dateFormat.format(order.orderDate))),
             DataCell(_buildStatusChip(order.status.name)),
@@ -228,7 +229,8 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Close Order'),
-        content: Text('Are you sure you want to close this order?'),
+        content: Text(
+            'Are you sure you want to close this order? This will return all rented items to stock.'),
         actions: [
           TextButton(
             child: Text('Cancel'),
@@ -247,9 +249,30 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
     );
 
     if (confirm == true) {
+      // Update order status and all product statuses
       order.status = OrderStatus.closed;
+      for (var product in order.products) {
+        // Update product status in order
+        product.status = RentalStatus.closed;
+
+        // Update product stock in database
+        final dbProduct = await _productDatabase.getProduct(product.productId);
+        if (dbProduct != null) {
+          final updatedProduct = dbProduct.copyWith(
+            rented: (dbProduct.rented ?? 0) - product.quantity,
+          );
+          await _productDatabase.updateProduct(
+            updatedProduct.dbKey!,
+            updatedProduct.toMap(),
+          );
+        }
+      }
+
+      // Update order in database
       await _orderDatabase.updateOrder(order);
-      _loadOrders();
+      setState(() {
+        _loadOrders(); // Refresh the orders list
+      });
     }
   }
 
@@ -336,7 +359,7 @@ class OrderDetailsDialog extends StatelessWidget {
       ),
       actions: [
         TextButton(
-          onPressed: () => onCustomerView(order.customerId),
+          onPressed: () => onCustomerView(order.customerId.toString()),
           child: Text('View Customer'),
         ),
         TextButton(

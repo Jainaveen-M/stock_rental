@@ -3,10 +3,17 @@ import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:stock_rental/model/product_filed.dart';
 import 'package:stock_rental/order/order_dashboard.dart';
+import 'package:stock_rental/model/product.dart';
 
 class AddProductFieldsWidget extends StatefulWidget {
   final List<ProductField> productFields;
-  const AddProductFieldsWidget({super.key, required this.productFields});
+  final List<Product> availableProducts;
+
+  const AddProductFieldsWidget({
+    super.key,
+    required this.productFields,
+    required this.availableProducts,
+  });
 
   @override
   _AddProductFieldsWidgetState createState() => _AddProductFieldsWidgetState();
@@ -33,7 +40,10 @@ class _AddProductFieldsWidgetState extends State<AddProductFieldsWidget> {
         ElevatedButton(
           onPressed: () {
             setState(() {
-              widget.productFields.add(ProductField());
+              widget.productFields.add(ProductField(
+                productId: widget.availableProducts.first.id,
+                productName: widget.availableProducts.first.name,
+              ));
             });
           },
           child: Text('Add Product'),

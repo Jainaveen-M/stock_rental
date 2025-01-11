@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 enum OrderStatus { active, closed, expired, pending }
 
 class Order {
-  String orderId;
-  String customerName;
-  String customerId;
-  DateTime orderDate;
-  List<ProductField> products;
+  final int orderId;
+  final String customerName;
+  final int customerId;
+  final DateTime orderDate;
+  final List<ProductField> products;
   OrderStatus status;
-  double? totalAmount;
+  final double? totalAmount;
 
   Order({
     required this.orderId,
@@ -67,26 +67,24 @@ class Order {
     }
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'orderId': orderId,
-      'customerName': customerName,
-      'customerId': customerId,
-      'orderDate': orderDate.toIso8601String(),
-      'products': products.map((product) => product.toMap()).toList(),
-      'status': status.toString(),
-      'totalAmount': totalAmount ?? products.totalAmount,
-    };
-  }
+  Map<String, dynamic> toMap() => {
+        'orderId': orderId,
+        'customerName': customerName,
+        'customerId': customerId,
+        'orderDate': orderDate.toIso8601String(),
+        'products': products.map((product) => product.toMap()).toList(),
+        'status': status.toString(),
+        'totalAmount': totalAmount ?? products.totalAmount,
+      };
 
-  static Order fromMap(Map<String, dynamic> map) {
+  factory Order.fromMap(Map<String, dynamic> map) {
     var productsData = List<Map<String, dynamic>>.from(map['products']);
     var products = productsData.map((p) => ProductField.fromMap(p)).toList();
 
     return Order(
-      orderId: map['orderId'],
+      orderId: map['orderId'] as int,
       customerName: map['customerName'],
-      customerId: map['customerId'],
+      customerId: map['customerId'] as int,
       orderDate: DateTime.parse(map['orderDate']),
       products: products,
       status: OrderStatus.values.firstWhere(
