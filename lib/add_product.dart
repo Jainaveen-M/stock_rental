@@ -87,68 +87,67 @@ class _ProductFieldWidgetState extends State<ProductFieldWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Product Dropdown or TextField
-          Row(
-            children: [
-              TextFormField(
-                controller: _productController,
-                decoration: InputDecoration(
-                  labelText: 'Product Name',
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 10),
+      child: Padding(
+        padding: EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product Dropdown or TextField
+            TextFormField(
+              controller: _productController,
+              decoration: InputDecoration(
+                labelText: 'Product Name',
+              ),
+              onChanged: (value) {
+                widget.productField.productName = value;
+              },
+            ),
+
+            // Quantity Field
+            TextFormField(
+              controller: _quantityController,
+              decoration: InputDecoration(
+                labelText: 'Quantity',
+              ),
+              keyboardType: TextInputType.number,
+              onChanged: (value) {
+                widget.productField.quantity = int.tryParse(value) ?? 1;
+              },
+            ),
+
+            // Start Date Picker
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: () => _pickDate(context, true),
+                  child: Text(widget.productField.startDate == null
+                      ? 'Select Start Date'
+                      : 'Start Date: ${DateFormat.yMMMd().format(widget.productField.startDate!)}'),
                 ),
-                onChanged: (value) {
-                  widget.productField.productName = value;
-                },
-              ),
+              ],
+            ),
 
-              // Quantity Field
-              TextFormField(
-                controller: _quantityController,
-                decoration: InputDecoration(
-                  labelText: 'Quantity',
+            // End Date Picker
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: () => _pickDate(context, false),
+                  child: Text(widget.productField.endDate == null
+                      ? 'Select End Date'
+                      : 'End Date: ${DateFormat.yMMMd().format(widget.productField.endDate!)}'),
                 ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  widget.productField.quantity = int.tryParse(value) ?? 1;
-                },
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          // Start Date Picker
-          Row(
-            children: [
-              ElevatedButton(
-                onPressed: () => _pickDate(context, true),
-                child: Text(widget.productField.startDate == null
-                    ? 'Select Start Date'
-                    : 'Start Date: ${DateFormat.yMMMd().format(widget.productField.startDate!)}'),
-              ),
-            ],
-          ),
-
-          // End Date Picker
-          Row(
-            children: [
-              ElevatedButton(
-                onPressed: () => _pickDate(context, false),
-                child: Text(widget.productField.endDate == null
-                    ? 'Select End Date'
-                    : 'End Date: ${DateFormat.yMMMd().format(widget.productField.endDate!)}'),
-              ),
-            ],
-          ),
-
-          // Remove Button
-          TextButton(
-            onPressed: widget.onRemove,
-            child: Text('Remove Product'),
-          ),
-        ],
+            // Remove Button
+            TextButton(
+              onPressed: widget.onRemove,
+              child: Text('Remove Product'),
+            ),
+          ],
+        ),
       ),
     );
   }
