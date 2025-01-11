@@ -27,6 +27,8 @@ class CreateOrderScreen extends StatefulWidget {
 class _CreateOrderScreenState extends State<CreateOrderScreen> {
   late Customer? selectedCustomer;
   List<ProductField> productFields = [];
+  DateTime? startDate;
+  DateTime? endDate;
 
   @override
   void initState() {
@@ -60,7 +62,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   }
 
   void _saveOrder() async {
-    if (selectedCustomer == null || productFields.isEmpty) {
+    if (selectedCustomer == null ||
+        productFields.isEmpty ||
+        startDate == null ||
+        endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please fill all required fields')),
       );
@@ -91,6 +96,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       customerName: selectedCustomer!.name,
       customerId: int.parse(selectedCustomer!.id),
       orderDate: DateTime.now(),
+      startDate: startDate,
+      endDate: endDate,
       products: productFields,
       status: OrderStatus.active,
     );
@@ -209,6 +216,66 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                 );
               },
             ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: startDate ?? DateTime.now(),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(Duration(days: 365)),
+                      );
+                      if (date != null) {
+                        setState(() => startDate = date);
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Start Date',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Text(
+                        startDate != null
+                            ? DateFormat('yyyy-MM-dd').format(startDate!)
+                            : 'Select Start Date',
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: InkWell(
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: endDate ??
+                            (startDate?.add(Duration(days: 7)) ??
+                                DateTime.now().add(Duration(days: 7))),
+                        firstDate: startDate ?? DateTime.now(),
+                        lastDate: DateTime.now().add(Duration(days: 365)),
+                      );
+                      if (date != null) {
+                        setState(() => endDate = date);
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'End Date',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Text(
+                        endDate != null
+                            ? DateFormat('yyyy-MM-dd').format(endDate!)
+                            : 'Select End Date',
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -301,68 +368,6 @@ class ProductFieldWidget extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: productField.startDate ?? DateTime.now(),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(Duration(days: 365)),
-                      );
-                      if (date != null) {
-                        productField.startDate = date;
-                      }
-                    },
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: 'Start Date',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        productField.startDate != null
-                            ? DateFormat('yyyy-MM-dd')
-                                .format(productField.startDate!)
-                            : 'Select Start Date',
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: InkWell(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: productField.endDate ??
-                            (productField.startDate?.add(Duration(days: 7)) ??
-                                DateTime.now().add(Duration(days: 7))),
-                        firstDate: productField.startDate ?? DateTime.now(),
-                        lastDate: DateTime.now().add(Duration(days: 365)),
-                      );
-                      if (date != null) {
-                        productField.endDate = date;
-                      }
-                    },
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: 'End Date',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        productField.endDate != null
-                            ? DateFormat('yyyy-MM-dd')
-                                .format(productField.endDate!)
-                            : 'Select End Date',
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
@@ -380,9 +385,6 @@ class OrderPreviewDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool hasAllDates =
-        !order.products.any((p) => p.startDate == null || p.endDate == null);
-
     return AlertDialog(
       title: Text('Order Preview'),
       content: SingleChildScrollView(
@@ -392,35 +394,21 @@ class OrderPreviewDialog extends StatelessWidget {
           children: [
             Text('Customer: ${order.customerName}',
                 style: TextStyle(fontWeight: FontWeight.bold)),
+            if (order.startDate != null)
+              Text(
+                  'Start Date: ${DateFormat('yyyy-MM-dd').format(order.startDate!)}'),
+            if (order.endDate != null)
+              Text(
+                  'End Date: ${DateFormat('yyyy-MM-dd').format(order.endDate!)}'),
             Divider(),
             Text('Products:', style: TextStyle(fontWeight: FontWeight.bold)),
             ...order.products.map((product) => Card(
                   margin: EdgeInsets.symmetric(vertical: 4),
                   child: ListTile(
                     title: Text(product.productName),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Quantity: ${product.quantity}'),
-                        if (product.startDate != null)
-                          Text(
-                              'Start: ${DateFormat('yyyy-MM-dd').format(product.startDate!)}'),
-                        if (product.endDate != null)
-                          Text(
-                              'End: ${DateFormat('yyyy-MM-dd').format(product.endDate!)}'),
-                      ],
-                    ),
+                    subtitle: Text('Quantity: ${product.quantity}'),
                   ),
                 )),
-            if (order.products
-                .any((p) => p.startDate == null || p.endDate == null))
-              Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                  '⚠️ Some products are missing dates',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
           ],
         ),
       ),
@@ -429,18 +417,17 @@ class OrderPreviewDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
           child: Text('Close'),
         ),
-        if (hasAllDates)
-          ElevatedButton.icon(
-            icon: Icon(Icons.check),
-            label: Text('Confirm & Save'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-            ),
-            onPressed: () {
-              Navigator.pop(context, true);
-            },
+        ElevatedButton.icon(
+          icon: Icon(Icons.check),
+          label: Text('Confirm & Save'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
           ),
+          onPressed: () {
+            Navigator.pop(context, true);
+          },
+        ),
       ],
     );
   }

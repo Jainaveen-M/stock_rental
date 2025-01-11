@@ -156,9 +156,9 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
         DataColumn2(label: Text('Actions'), size: ColumnSize.L),
       ],
       rows: _getFilteredOrders().map((order) {
-        bool hasExpiredProducts = order.products.any((product) =>
-            product.endDate!.isBefore(DateTime.now()) &&
-            product.status != RentalStatus.closed);
+        bool hasExpiredProducts = order.endDate != null &&
+            order.endDate!.isBefore(DateTime.now()) &&
+            order.status != OrderStatus.closed;
 
         return DataRow2(
           color: hasExpiredProducts

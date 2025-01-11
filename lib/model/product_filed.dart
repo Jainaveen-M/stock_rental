@@ -7,8 +7,6 @@ class ProductField {
   int productId;
   String productName;
   int quantity;
-  DateTime? startDate;
-  DateTime? endDate;
   RentalStatus status;
   double? price;
 
@@ -16,8 +14,6 @@ class ProductField {
     required this.productId,
     this.productName = '',
     this.quantity = 1,
-    this.startDate,
-    this.endDate,
     this.status = RentalStatus.active,
     this.price,
   });
@@ -26,8 +22,6 @@ class ProductField {
         'productId': productId,
         'productName': productName,
         'quantity': quantity,
-        'startDate': startDate?.toIso8601String(),
-        'endDate': endDate?.toIso8601String(),
         'status': status.toString(),
         'price': price,
       };
@@ -36,9 +30,6 @@ class ProductField {
         productId: map['productId'] as int,
         productName: map['productName'] ?? '',
         quantity: map['quantity'] ?? 1,
-        startDate:
-            map['startDate'] != null ? DateTime.parse(map['startDate']) : null,
-        endDate: map['endDate'] != null ? DateTime.parse(map['endDate']) : null,
         status: RentalStatus.values.firstWhere(
           (e) => e.toString() == map['status'],
           orElse: () => RentalStatus.active,
@@ -47,8 +38,8 @@ class ProductField {
       );
 
   bool get isActive => status == RentalStatus.active;
-  bool get isExpired => endDate != null && endDate!.isBefore(DateTime.now());
-  bool get needsAttention => isExpired && status != RentalStatus.closed;
+  bool get isExpired => false;
+  bool get needsAttention => false;
   double get totalPrice => quantity * (price ?? 0);
 
   void updateStatus() {

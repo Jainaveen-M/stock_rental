@@ -8,6 +8,8 @@ class Order {
   final String customerName;
   final int customerId;
   final DateTime orderDate;
+  final DateTime? startDate;
+  final DateTime? endDate;
   final List<ProductField> products;
   OrderStatus status;
   final double? totalAmount;
@@ -17,6 +19,8 @@ class Order {
     required this.customerName,
     required this.customerId,
     required this.orderDate,
+    this.startDate,
+    this.endDate,
     required this.products,
     this.status = OrderStatus.pending,
     this.totalAmount,
@@ -72,6 +76,8 @@ class Order {
         'customerName': customerName,
         'customerId': customerId,
         'orderDate': orderDate.toIso8601String(),
+        'startDate': startDate?.toIso8601String(),
+        'endDate': endDate?.toIso8601String(),
         'products': products.map((product) => product.toMap()).toList(),
         'status': status.toString(),
         'totalAmount': totalAmount ?? products.totalAmount,
@@ -86,6 +92,9 @@ class Order {
       customerName: map['customerName'],
       customerId: map['customerId'] as int,
       orderDate: DateTime.parse(map['orderDate']),
+      startDate:
+          map['startDate'] != null ? DateTime.parse(map['startDate']) : null,
+      endDate: map['endDate'] != null ? DateTime.parse(map['endDate']) : null,
       products: products,
       status: OrderStatus.values.firstWhere(
         (e) => e.toString() == map['status'],
