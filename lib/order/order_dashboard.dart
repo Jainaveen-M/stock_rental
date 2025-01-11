@@ -94,9 +94,22 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    double totalRevenue = orders
-        .where((o) => o.status == OrderStatus.active)
-        .fold(0, (sum, order) => sum + order.orderTotal);
+    final today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+
+    final ordersEndingToday = orders
+        .where((order) =>
+            order.endDate != null &&
+            order.status == OrderStatus.active &&
+            DateTime(
+              order.endDate!.year,
+              order.endDate!.month,
+              order.endDate!.day,
+            ).isAtSameMomentAs(today))
+        .length;
 
     return Scaffold(
       appBar: AppBar(
@@ -143,14 +156,14 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                           Icons.check_circle_outline,
                           Colors.green,
                         ),
+                        SizedBox(width: 16),
+                        _buildStatCard(
+                          'Ending Today',
+                          ordersEndingToday.toString(),
+                          Icons.timer,
+                          Colors.orange,
+                        ),
                       ],
-                    ),
-                    SizedBox(height: 16),
-                    _buildStatCard(
-                      'Total Revenue',
-                      '₹${totalRevenue.toStringAsFixed(2)}',
-                      Icons.attach_money,
-                      Colors.purple,
                     ),
                   ],
                 ),
@@ -257,6 +270,12 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
   }
 
   Widget _buildOrdersTable() {
+    final today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+
     return Card(
       margin: EdgeInsets.all(16),
       shape: RoundedRectangleBorder(
@@ -279,21 +298,37 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
               order.endDate!.isBefore(DateTime.now()) &&
               order.status != OrderStatus.closed;
 
+          bool endsToday = order.endDate != null &&
+              DateTime(order.endDate!.year, order.endDate!.month,
+                      order.endDate!.day)
+                  .isAtSameMomentAs(today);
+
           return DataRow2(
-            color: isExpired
-                ? MaterialStateProperty.all(Colors.red.shade50)
-                : null,
+            color: MaterialStateProperty.resolveWith<Color?>((states) {
+              if (isExpired) return Colors.red.shade50;
+              if (endsToday) return Colors.orange.shade50;
+              return null;
+            }),
             cells: [
               DataCell(Text(
                 '#${order.orderId.toString()}',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: endsToday ? Colors.orange.shade900 : null,
+                ),
               )),
               DataCell(Text(order.customerName)),
               DataCell(
                   Text(dateFormat.format(order.startDate ?? order.orderDate))),
-              DataCell(Text(order.endDate != null
-                  ? dateFormat.format(order.endDate!)
-                  : 'Not set')),
+              DataCell(Text(
+                order.endDate != null
+                    ? dateFormat.format(order.endDate!)
+                    : 'Not set',
+                style: TextStyle(
+                  color: endsToday ? Colors.orange.shade900 : null,
+                  fontWeight: endsToday ? FontWeight.bold : null,
+                ),
+              )),
               DataCell(_buildStatusChip(order.status.name)),
               DataCell(_buildActionButtons(order)),
             ],
