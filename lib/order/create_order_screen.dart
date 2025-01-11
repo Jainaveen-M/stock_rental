@@ -5,6 +5,7 @@ import 'package:stock_rental/model/product.dart';
 import 'package:stock_rental/model/customer.dart';
 import 'package:stock_rental/model/product_filed.dart';
 import 'package:stock_rental/repo/product_db_helper.dart';
+import 'package:stock_rental/order/retail_bill_preview.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   final List<Customer> customers;
@@ -29,6 +30,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   List<ProductField> productFields = [];
   DateTime? startDate;
   DateTime? endDate;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -135,311 +137,302 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    double orderTotal = productFields.fold(
+      0,
+      (sum, product) =>
+          sum + (product.quantity * (product.price ?? 0) * _getRentalDays()),
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Create New Order'),
         actions: [
           TextButton.icon(
-            icon: Icon(Icons.preview,
-                color: Theme.of(context).colorScheme.secondary),
-            label: Text(
-              'Preview',
-              style: TextStyle(color: Theme.of(context).colorScheme.secondary),
-            ),
-            onPressed: _previewOrder,
-          ),
-          TextButton.icon(
-            icon:
-                Icon(Icons.save, color: Theme.of(context).colorScheme.primary),
-            label: Text(
-              'Save',
-              style: TextStyle(color: Theme.of(context).colorScheme.primary),
-            ),
-            onPressed: _saveOrder,
+            icon: Icon(Icons.preview),
+            label: Text('Preview Bill'),
+            onPressed: _showBillPreview,
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+      body: Form(
+        key: _formKey,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DropdownButtonFormField<Customer>(
-              value: selectedCustomer,
-              items: widget.customers.map((customer) {
-                return DropdownMenuItem(
-                  value: customer,
-                  child: Text(customer.name),
-                );
-              }).toList(),
-              onChanged: (Customer? value) {
-                setState(() => selectedCustomer = value);
-              },
-              decoration: InputDecoration(
-                labelText: 'Select Customer',
-                border: OutlineInputBorder(),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surface,
-                labelStyle:
-                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<Customer>(
+                          value: selectedCustomer,
+                          decoration: InputDecoration(
+                            labelText: 'Customer',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: widget.customers
+                              .map((c) => DropdownMenuItem(
+                                    value: c,
+                                    child: Text(c.name),
+                                  ))
+                              .toList(),
+                          onChanged: (v) =>
+                              setState(() => selectedCustomer = v),
+                          validator: (v) => v == null ? 'Required' : null,
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: _buildDatePicker(
+                          label: 'Start Date',
+                          value: startDate,
+                          onChanged: (date) => setState(() => startDate = date),
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: _buildDatePicker(
+                          label: 'End Date',
+                          value: endDate,
+                          onChanged: (date) => setState(() => endDate = date),
+                          minDate: startDate,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (startDate != null && endDate != null)
+                    Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Rental Period: ${_getRentalDays()} days',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                ],
               ),
             ),
-            SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Products',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.add),
-                  label: Text('Add Product'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                    foregroundColor: Theme.of(context).colorScheme.onSecondary,
-                  ),
-                  onPressed: _addProduct,
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: productFields.length,
-              itemBuilder: (context, index) {
-                return ProductFieldWidget(
-                  products: widget.availableProducts,
-                  productField: productFields[index],
-                  onRemove: () => _removeProduct(index),
-                  startDate: startDate,
-                  endDate: endDate,
-                );
-              },
-            ),
-            SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: startDate ?? DateTime.now(),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(Duration(days: 365)),
-                      );
-                      if (date != null) {
-                        setState(() => startDate = date);
-                      }
-                    },
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: 'Start Date',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        startDate != null
-                            ? DateFormat('yyyy-MM-dd').format(startDate!)
-                            : 'Select Start Date',
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: InkWell(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: endDate ??
-                            (startDate?.add(Duration(days: 7)) ??
-                                DateTime.now().add(Duration(days: 7))),
-                        firstDate: startDate ?? DateTime.now(),
-                        lastDate: DateTime.now().add(Duration(days: 365)),
-                      );
-                      if (date != null) {
-                        setState(() => endDate = date);
-                      }
-                    },
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: 'End Date',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        endDate != null
-                            ? DateFormat('yyyy-MM-dd').format(endDate!)
-                            : 'Select End Date',
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Card(
+                      elevation: 4,
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(16),
+                            color: Theme.of(context).primaryColor,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                    flex: 4,
+                                    child: Text('Product',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold))),
+                                Expanded(
+                                    flex: 1,
+                                    child: Text('Qty',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold))),
+                                Expanded(
+                                    flex: 2,
+                                    child: Text('Price/Day',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold))),
+                                Expanded(
+                                    flex: 2,
+                                    child: Text('Total',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold))),
+                                SizedBox(width: 48), // For delete button
+                              ],
+                            ),
+                          ),
+                          if (productFields.isEmpty)
+                            Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text('No products added',
+                                  style: TextStyle(color: Colors.grey)),
+                            ),
+                          ...productFields
+                              .map((field) => _buildProductRow(field)),
+                          Divider(height: 1),
+                          Container(
+                            padding: EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Order Total:',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16)),
+                                Text(
+                                  '₹${orderTotal.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ),
       ),
+      floatingActionButton: startDate != null && endDate != null
+          ? FloatingActionButton.extended(
+              onPressed: _addProduct,
+              label: Text('Add Product'),
+              icon: Icon(Icons.add),
+            )
+          : null,
     );
   }
-}
 
-class ProductFieldWidget extends StatelessWidget {
-  final List<Product> products;
-  final ProductField productField;
-  final VoidCallback onRemove;
-  final DateTime? startDate;
-  final DateTime? endDate;
+  Widget _buildProductRow(ProductField field) {
+    double total = (field.price ?? 0) * field.quantity * _getRentalDays();
 
-  const ProductFieldWidget({
-    Key? key,
-    required this.products,
-    required this.productField,
-    required this.onRemove,
-    this.startDate,
-    this.endDate,
-  }) : super(key: key);
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 4,
+            child: DropdownButtonFormField<Product>(
+              value: widget.availableProducts
+                  .firstWhere((p) => p.id == field.productId),
+              items: widget.availableProducts
+                  .map((p) => DropdownMenuItem(
+                        value: p,
+                        child: Text(p.name),
+                      ))
+                  .toList(),
+              onChanged: (Product? value) {
+                if (value != null) {
+                  setState(() {
+                    field.productId = value.id;
+                    field.productName = value.name;
+                    field.price = value.price;
+                  });
+                }
+              },
+              decoration: InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            flex: 1,
+            child: TextFormField(
+              initialValue: field.quantity.toString(),
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                isDense: true,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  field.quantity = int.tryParse(value) ?? 1;
+                });
+              },
+            ),
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            flex: 2,
+            child: Text('₹${(field.price ?? 0).toStringAsFixed(2)}'),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text('₹${total.toStringAsFixed(2)}'),
+          ),
+          IconButton(
+            icon: Icon(Icons.delete, color: Colors.red),
+            onPressed: () => setState(() => productFields.remove(field)),
+          ),
+        ],
+      ),
+    );
+  }
 
-  int get rentalDays {
+  int _getRentalDays() {
     if (startDate == null || endDate == null) return 1;
     return endDate!.difference(startDate!).inDays + 1;
   }
 
-  double get totalPrice {
-    final pricePerDay = productField.price ?? 0;
-    return pricePerDay * productField.quantity * rentalDays;
+  void _showBillPreview() {
+    // Show retail-style bill preview
+    showDialog(
+      context: context,
+      builder: (context) => RetailBillPreview(
+        order: Order(
+          orderId: DateTime.now().millisecondsSinceEpoch,
+          customerName: selectedCustomer?.name ?? '',
+          customerId: int.parse(selectedCustomer?.id ?? '0'),
+          orderDate: DateTime.now(),
+          startDate: startDate,
+          endDate: endDate,
+          products: productFields,
+          status: OrderStatus.active,
+        ),
+        rentalDays: _getRentalDays(),
+      ),
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (products.isEmpty) {
-      return Center(child: Text('No products available'));
-    }
-
-    Product selectedProduct = products.firstWhere(
-      (p) => p.id == productField.productId,
-      orElse: () {
-        if (products.isNotEmpty) {
-          productField.productId = products.first.id;
-          productField.productName = products.first.name;
-          productField.price = products.first.price;
-          return products.first;
+  Widget _buildDatePicker({
+    required String label,
+    required DateTime? value,
+    required Function(DateTime?) onChanged,
+    DateTime? minDate,
+  }) {
+    return InkWell(
+      onTap: () async {
+        final date = await showDatePicker(
+          context: context,
+          initialDate: value ?? DateTime.now(),
+          firstDate: minDate ?? DateTime.now(),
+          lastDate: DateTime.now().add(Duration(days: 365)),
+        );
+        if (date != null) {
+          onChanged(date);
         }
-        throw StateError('Products list is empty');
       },
-    );
-
-    return Card(
-      elevation: 3,
-      margin: EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Container(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                // Product Selection - 40% width
-                Expanded(
-                  flex: 4,
-                  child: DropdownButtonFormField<Product>(
-                    value: selectedProduct,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'Product',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                    items: products.map((product) {
-                      return DropdownMenuItem(
-                        value: product,
-                        child: Text('${product.name} (₹${product.price}/day)'),
-                      );
-                    }).toList(),
-                    onChanged: (Product? value) {
-                      if (value != null) {
-                        productField.productId = value.id;
-                        productField.productName = value.name;
-                        productField.price = value.price;
-                      }
-                    },
-                  ),
-                ),
-                SizedBox(width: 12),
-                // Quantity Input - 20% width
-                Expanded(
-                  flex: 2,
-                  child: TextFormField(
-                    initialValue: productField.quantity.toString(),
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'Qty',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                    onChanged: (value) {
-                      productField.quantity = int.tryParse(value) ?? 1;
-                    },
-                  ),
-                ),
-                SizedBox(width: 12),
-                // Price Display - 30% width
-                Expanded(
-                  flex: 3,
-                  child: Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Theme.of(context).primaryColor.withOpacity(0.2),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Price: ₹${(productField.price ?? 0).toStringAsFixed(2)}/day',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                        if (startDate != null && endDate != null)
-                          Text(
-                            '$rentalDays days',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        Text(
-                          'Total: ₹${totalPrice.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(width: 8),
-                // Remove Button
-                IconButton(
-                  icon: Icon(Icons.remove_circle_outline),
-                  onPressed: onRemove,
-                  color: Colors.red,
-                  tooltip: 'Remove Product',
-                ),
-              ],
-            ),
-          ],
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(),
+        ),
+        child: Text(
+          value != null
+              ? DateFormat('yyyy-MM-dd').format(value)
+              : 'Select Date',
         ),
       ),
     );
