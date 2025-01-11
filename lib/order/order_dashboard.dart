@@ -93,6 +93,10 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    double totalRevenue = orders
+        .where((o) => o.status == OrderStatus.active)
+        .fold(0, (sum, order) => sum + order.orderTotal);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Orders Management'),
@@ -109,34 +113,47 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                 bottomRight: Radius.circular(30),
               ),
             ),
-            child: Column(
-              children: [
-                _buildFilterSection(),
-                SizedBox(height: 16),
-                Row(
+            child: SafeArea(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: 300),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildStatCard(
-                      'Active Orders',
-                      orders
-                          .where((o) => o.status == OrderStatus.active)
-                          .length
-                          .toString(),
-                      Icons.pending_actions,
-                      Colors.blue,
+                    _buildFilterSection(),
+                    SizedBox(height: 16),
+                    Row(
+                      children: [
+                        _buildStatCard(
+                          'Active Orders',
+                          orders
+                              .where((o) => o.status == OrderStatus.active)
+                              .length
+                              .toString(),
+                          Icons.pending_actions,
+                          Colors.blue,
+                        ),
+                        SizedBox(width: 16),
+                        _buildStatCard(
+                          'Completed',
+                          orders
+                              .where((o) => o.status == OrderStatus.closed)
+                              .length
+                              .toString(),
+                          Icons.check_circle_outline,
+                          Colors.green,
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 16),
+                    SizedBox(height: 16),
                     _buildStatCard(
-                      'Completed',
-                      orders
-                          .where((o) => o.status == OrderStatus.closed)
-                          .length
-                          .toString(),
-                      Icons.check_circle_outline,
-                      Colors.green,
+                      'Total Revenue',
+                      '\$${totalRevenue.toStringAsFixed(2)}',
+                      Icons.attach_money,
+                      Colors.purple,
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
           Expanded(
@@ -193,7 +210,8 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
         ),
-        child: Padding(
+        child: Container(
+          height: 100,
           padding: EdgeInsets.all(16),
           child: Row(
             children: [
@@ -206,26 +224,29 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                 child: Icon(icon, color: color),
               ),
               SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: color,
+                    SizedBox(height: 4),
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

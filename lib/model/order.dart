@@ -104,7 +104,10 @@ class Order {
     );
   }
 
-  double get orderTotal => totalAmount ?? products.totalAmount;
+  double get orderTotal => products.fold(
+        0,
+        (sum, product) => sum + (product.quantity * (product.price ?? 0)),
+      );
 
   bool get needsAttention {
     return products.any((product) => product.needsAttention);

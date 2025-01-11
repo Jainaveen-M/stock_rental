@@ -213,6 +213,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   products: widget.availableProducts,
                   productField: productFields[index],
                   onRemove: () => _removeProduct(index),
+                  startDate: startDate,
+                  endDate: endDate,
                 );
               },
             ),
@@ -287,13 +289,27 @@ class ProductFieldWidget extends StatelessWidget {
   final List<Product> products;
   final ProductField productField;
   final VoidCallback onRemove;
+  final DateTime? startDate;
+  final DateTime? endDate;
 
   const ProductFieldWidget({
     Key? key,
     required this.products,
     required this.productField,
     required this.onRemove,
+    this.startDate,
+    this.endDate,
   }) : super(key: key);
+
+  int get rentalDays {
+    if (startDate == null || endDate == null) return 1;
+    return endDate!.difference(startDate!).inDays + 1;
+  }
+
+  double get totalPrice {
+    final pricePerDay = productField.price ?? 0;
+    return pricePerDay * productField.quantity * rentalDays;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -307,6 +323,7 @@ class ProductFieldWidget extends StatelessWidget {
         if (products.isNotEmpty) {
           productField.productId = products.first.id;
           productField.productName = products.first.name;
+          productField.price = products.first.price;
           return products.first;
         }
         throw StateError('Products list is empty');
@@ -314,57 +331,111 @@ class ProductFieldWidget extends StatelessWidget {
     );
 
     return Card(
+      elevation: 3,
       margin: EdgeInsets.symmetric(vertical: 8),
-      child: Padding(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Container(
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
             Row(
               children: [
+                // Product Selection - 40% width
                 Expanded(
+                  flex: 4,
                   child: DropdownButtonFormField<Product>(
                     value: selectedProduct,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: 'Product',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                    ),
                     items: products.map((product) {
                       return DropdownMenuItem(
                         value: product,
-                        child: Text(product.name),
+                        child: Text('${product.name} (\$${product.price}/day)'),
                       );
                     }).toList(),
                     onChanged: (Product? value) {
                       if (value != null) {
                         productField.productId = value.id;
                         productField.productName = value.name;
+                        productField.price = value.price;
                       }
                     },
-                    decoration: InputDecoration(
-                      labelText: 'Select Product',
-                      border: OutlineInputBorder(),
-                    ),
                   ),
                 ),
-                SizedBox(width: 16),
-                IconButton(
-                  icon: Icon(Icons.remove_circle_outline),
-                  onPressed: onRemove,
-                  color: Colors.red,
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            Row(
-              children: [
+                SizedBox(width: 12),
+                // Quantity Input - 20% width
                 Expanded(
+                  flex: 2,
                   child: TextFormField(
                     initialValue: productField.quantity.toString(),
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: 'Quantity',
-                      border: OutlineInputBorder(),
+                      labelText: 'Qty',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
                     ),
                     onChanged: (value) {
                       productField.quantity = int.tryParse(value) ?? 1;
                     },
                   ),
+                ),
+                SizedBox(width: 12),
+                // Price Display - 30% width
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Theme.of(context).primaryColor.withOpacity(0.2),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Price: \$${(productField.price ?? 0).toStringAsFixed(2)}/day',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        if (startDate != null && endDate != null)
+                          Text(
+                            '$rentalDays days',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        Text(
+                          'Total: \$${totalPrice.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
+                // Remove Button
+                IconButton(
+                  icon: Icon(Icons.remove_circle_outline),
+                  onPressed: onRemove,
+                  color: Colors.red,
+                  tooltip: 'Remove Product',
                 ),
               ],
             ),
@@ -385,6 +456,11 @@ class OrderPreviewDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    double orderTotal = order.products.fold(
+      0,
+      (sum, product) => sum + (product.quantity * (product.price ?? 0)),
+    );
+
     return AlertDialog(
       title: Text('Order Preview'),
       content: SingleChildScrollView(
@@ -406,9 +482,27 @@ class OrderPreviewDialog extends StatelessWidget {
                   margin: EdgeInsets.symmetric(vertical: 4),
                   child: ListTile(
                     title: Text(product.productName),
-                    subtitle: Text('Quantity: ${product.quantity}'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Quantity: ${product.quantity}'),
+                        Text(
+                            'Price: \$${(product.price ?? 0).toStringAsFixed(2)}'),
+                        Text(
+                            'Total: \$${(product.quantity * (product.price ?? 0)).toStringAsFixed(2)}'),
+                      ],
+                    ),
                   ),
                 )),
+            Divider(),
+            Text(
+              'Order Total: \$${orderTotal.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
           ],
         ),
       ),
