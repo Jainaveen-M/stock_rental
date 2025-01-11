@@ -10,6 +10,7 @@ import 'package:stock_rental/repo/customer_db_helper.dart';
 import 'package:stock_rental/repo/product_db_helper.dart';
 import 'package:uuid/uuid.dart';
 import 'package:stock_rental/order/create_order_screen.dart';
+import 'package:stock_rental/order/retail_bill_preview.dart';
 
 extension OrderStatusExtension on OrderStatus {
   String get name {
@@ -343,8 +344,8 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
       children: [
         IconButton(
           icon: Icon(Icons.visibility),
-          tooltip: 'View Details',
-          onPressed: () => _showOrderDetails(order),
+          tooltip: 'View Bill',
+          onPressed: () => _showBillPreview(order),
         ),
         if (order.status.name == 'Active')
           IconButton(
@@ -353,6 +354,18 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
             onPressed: () => _closeOrder(order),
           ),
       ],
+    );
+  }
+
+  void _showBillPreview(Order order) {
+    showDialog(
+      context: context,
+      builder: (context) => RetailBillPreview(
+        order: order,
+        rentalDays: order.endDate != null && order.startDate != null
+            ? order.endDate!.difference(order.startDate!).inDays + 1
+            : 1,
+      ),
     );
   }
 
