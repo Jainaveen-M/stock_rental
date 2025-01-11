@@ -3,12 +3,14 @@ class Customer {
   final String name;
   final String phoneNumber;
   final String address;
+  final String contact;
 
   Customer({
     required this.id,
     required this.name,
     required this.phoneNumber,
     required this.address,
+    required this.contact,
   });
 
   // Convert a Customer object to a Map
@@ -18,6 +20,7 @@ class Customer {
       'name': name,
       'phoneNumber': phoneNumber,
       'address': address,
+      'contact': contact,
     };
   }
 
@@ -28,6 +31,7 @@ class Customer {
       name: map['name'] as String,
       phoneNumber: map['phoneNumber'] as String,
       address: map['address'] as String,
+      contact: map['contact'] ?? '',
     );
   }
 }

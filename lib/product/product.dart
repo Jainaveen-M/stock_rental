@@ -25,11 +25,7 @@ class _ProductScreenState extends State<ProductScreen> {
   Future<void> _loadProducts() async {
     final productMaps = await _db.getProducts();
     setState(() {
-      _products = productMaps
-          .asMap()
-          .entries
-          .map((entry) => Product.fromMap(entry.key, entry.value))
-          .toList();
+      _products = productMaps.map((map) => Product.fromMap(map)).toList();
       _applyFilters();
     });
   }
@@ -145,10 +141,11 @@ class _ProductScreenState extends State<ProductScreen> {
                             await _db.addProduct(newProduct.toMap());
                           } else {
                             // Update existing product.
-                            final updatedProduct = product
-                              ..name = name
-                              ..category = category
-                              ..price = price;
+                            final updatedProduct = product.copyWith(
+                              name: name,
+                              category: category,
+                              price: price,
+                            );
 
                             if (updatedProduct.dbKey != null) {
                               await _db.updateProduct(updatedProduct.dbKey!,

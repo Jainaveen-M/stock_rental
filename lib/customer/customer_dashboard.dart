@@ -193,6 +193,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                             name: name,
                             phoneNumber: phone,
                             address: address,
+                            contact: phone,
                           );
 
                           await CustomerDatabase().addCustomer(newCustomer);

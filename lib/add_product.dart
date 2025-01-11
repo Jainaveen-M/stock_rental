@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:intl/intl.dart';
+import 'package:stock_rental/model/product_filed.dart';
+import 'package:stock_rental/order/order_dashboard.dart';
 
 class AddProductFieldsWidget extends StatefulWidget {
+  final List<ProductField> productFields;
+  const AddProductFieldsWidget({super.key, required this.productFields});
+
   @override
   _AddProductFieldsWidgetState createState() => _AddProductFieldsWidgetState();
 }
 
 class _AddProductFieldsWidgetState extends State<AddProductFieldsWidget> {
-  List<ProductField> _productFields = [];
-
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         // Display the dynamic product input fields
-        ..._productFields.map((field) {
+        ...widget.productFields.map((field) {
           return ProductFieldWidget(
             productField: field,
             onRemove: () {
               setState(() {
-                _productFields.remove(field);
+                widget.productFields.remove(field);
               });
             },
           );
@@ -30,7 +33,7 @@ class _AddProductFieldsWidgetState extends State<AddProductFieldsWidget> {
         ElevatedButton(
           onPressed: () {
             setState(() {
-              _productFields.add(ProductField());
+              widget.productFields.add(ProductField());
             });
           },
           child: Text('Add Product'),
@@ -40,18 +43,12 @@ class _AddProductFieldsWidgetState extends State<AddProductFieldsWidget> {
   }
 }
 
-class ProductField {
-  String? productName;
-  int quantity = 1;
-  DateTime? startDate;
-  DateTime? endDate;
-}
-
 class ProductFieldWidget extends StatefulWidget {
   final ProductField productField;
   final VoidCallback onRemove;
 
-  ProductFieldWidget({required this.productField, required this.onRemove});
+  ProductFieldWidget(
+      {super.key, required this.productField, required this.onRemove});
 
   @override
   _ProductFieldWidgetState createState() => _ProductFieldWidgetState();
@@ -83,6 +80,13 @@ class _ProductFieldWidgetState extends State<ProductFieldWidget> {
         }
       });
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _productController.text = widget.productField.productName.toString();
+    _quantityController.text = widget.productField.quantity.toString();
   }
 
   @override

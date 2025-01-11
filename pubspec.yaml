@@ -40,6 +40,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   flutter_datetime_picker_plus: ^2.2.0
+  data_table_2: ^2.5.18
 
 dev_dependencies:
   flutter_test:

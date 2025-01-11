@@ -1,10 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:stock_rental/add_product.dart';
+import 'package:data_table_2/data_table_2.dart';
 import 'package:stock_rental/model/order.dart';
 import 'package:stock_rental/model/product.dart';
+import 'package:stock_rental/model/customer.dart';
+import 'package:stock_rental/model/product_filed.dart';
 import 'package:stock_rental/repo/order_db_helper.dart';
-import 'package:intl/intl.dart';
+import 'package:stock_rental/repo/customer_db_helper.dart';
+import 'package:stock_rental/repo/product_db_helper.dart';
+import 'package:uuid/uuid.dart';
+import 'package:stock_rental/order/create_order_screen.dart';
+
+extension OrderStatusExtension on OrderStatus {
+  String get name {
+    switch (this) {
+      case OrderStatus.active:
+        return 'Active';
+      case OrderStatus.closed:
+        return 'Closed';
+      default:
+        return 'Unknown';
+    }
+  }
+}
 
 class OrdersDashboard extends StatefulWidget {
   @override
@@ -13,19 +31,25 @@ class OrdersDashboard extends StatefulWidget {
 
 class _OrdersDashboardState extends State<OrdersDashboard> {
   final _orderDatabase = OrderDatabase();
+  final _customerDatabase = CustomerDatabase();
+  final _productDatabase = ProductDatabase();
   final searchController = TextEditingController();
   final DateFormat dateFormat = DateFormat('yyyy-MM-dd');
   List<Order> orders = [];
+  String filterStatus = 'All';
 
   @override
   void initState() {
     super.initState();
-    _orderDatabase.init().then((_) {
-      _loadOrders();
-    });
+    _initializeDatabases();
   }
 
-  // Load orders from the database
+  Future<void> _initializeDatabases() async {
+    await _orderDatabase.init();
+    await _customerDatabase.init();
+    _loadOrders();
+  }
+
   void _loadOrders() async {
     final allOrders = await _orderDatabase.getAllOrders();
     setState(() {
@@ -33,201 +57,323 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
     });
   }
 
-  // Filter orders by search query
   List<Order> _getFilteredOrders() {
     String query = searchController.text.toLowerCase();
     return orders.where((order) {
-      return order.orderId.toLowerCase().contains(query) ||
+      bool matchesSearch = order.orderId.toLowerCase().contains(query) ||
           order.customerName.toLowerCase().contains(query);
+
+      if (filterStatus == 'All') return matchesSearch;
+      return matchesSearch && order.status.name == filterStatus;
     }).toList();
   }
 
-  // Create a new order
-  void _createNewOrder() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: NewOrderDialog(
-            onCreate: (newOrder) {
-              _orderDatabase.saveOrder(newOrder);
-              _loadOrders();
-              Navigator.pop(context);
-            },
-          ),
-        );
-      },
-    );
-  }
+  void _createNewOrder() async {
+    final customers = await _customerDatabase.getAllCustomers();
+    final productMaps = await _productDatabase.getProducts();
+    final products = productMaps.map((map) => Product.fromMap2(map)).toList();
 
-  // Edit an order
-  void _editOrder(Order order) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return EditOrderDialog(
-          order: order,
-          onUpdate: (updatedOrder) {
-            _orderDatabase.updateOrder(updatedOrder);
+    if (!mounted) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => CreateOrderScreen(
+          customers: customers,
+          availableProducts: products,
+          onCreate: (Order newOrder) async {
+            await _orderDatabase.saveOrder(newOrder);
             _loadOrders();
             Navigator.pop(context);
           },
-        );
-      },
+        ),
+      ),
     );
-  }
-
-  // Mark order as closed
-  void _closeOrder(Order order) async {
-    order.status = 'Closed';
-    await _orderDatabase.updateOrder(order);
-    _loadOrders();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Orders"),
+        title: Text('Orders Management'),
         actions: [
           IconButton(
             icon: Icon(Icons.add),
             onPressed: _createNewOrder,
+            tooltip: 'Create New Order',
           ),
         ],
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
+          _buildFilterSection(),
+          Expanded(child: _buildOrdersTable()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterSection() {
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Expanded(
             child: TextField(
               controller: searchController,
               decoration: InputDecoration(
                 labelText: 'Search Orders',
-                suffixIcon: Icon(Icons.search),
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
               ),
               onChanged: (_) => setState(() {}),
             ),
           ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _getFilteredOrders().length,
-              itemBuilder: (context, index) {
-                Order order = _getFilteredOrders()[index];
-                return Card(
-                  child: ListTile(
-                    title: Text('Order ID: ${order.orderId}'),
-                    subtitle: Text(
-                        'Customer: ${order.customerName}\nStatus: ${order.status}'),
-                    onTap: () => _editOrder(order),
-                    trailing: order.status == 'Active'
-                        ? IconButton(
-                            icon: Icon(Icons.close),
-                            onPressed: () => _closeOrder(order),
-                          )
-                        : null,
-                  ),
-                );
-              },
-            ),
+          SizedBox(width: 16),
+          DropdownButton<String>(
+            value: filterStatus,
+            items: ['All', 'Active', 'Closed'].map((status) {
+              return DropdownMenuItem(
+                value: status,
+                child: Text(status),
+              );
+            }).toList(),
+            onChanged: (value) => setState(() => filterStatus = value!),
           ),
         ],
       ),
     );
   }
-}
 
-class NewOrderDialog extends StatelessWidget {
-  final Function(Order) onCreate;
+  Widget _buildOrdersTable() {
+    return DataTable2(
+      columns: [
+        DataColumn2(label: Text('Order ID'), size: ColumnSize.S),
+        DataColumn2(label: Text('Customer'), size: ColumnSize.M),
+        DataColumn2(label: Text('Order Date'), size: ColumnSize.M),
+        DataColumn2(label: Text('Status'), size: ColumnSize.S),
+        DataColumn2(label: Text('Products'), size: ColumnSize.S),
+        DataColumn2(label: Text('Actions'), size: ColumnSize.L),
+      ],
+      rows: _getFilteredOrders().map((order) {
+        bool hasExpiredProducts = order.products.any((product) =>
+            product.endDate!.isBefore(DateTime.now()) &&
+            product.status != RentalStatus.closed);
 
-  NewOrderDialog({required this.onCreate});
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text("Create New Order"),
-      content: CreateOrderForm(onCreate: onCreate),
+        return DataRow2(
+          color: hasExpiredProducts
+              ? MaterialStateProperty.all(Colors.red.shade100)
+              : null,
+          cells: [
+            DataCell(Text(order.orderId)),
+            DataCell(Text(order.customerName)),
+            DataCell(Text(dateFormat.format(order.orderDate))),
+            DataCell(_buildStatusChip(order.status.name)),
+            DataCell(Text('${order.products.length} items')),
+            DataCell(_buildActionButtons(order)),
+          ],
+        );
+      }).toList(),
     );
   }
-}
 
-class EditOrderDialog extends StatelessWidget {
-  final Order order;
-  final Function(Order) onUpdate;
-
-  EditOrderDialog({required this.order, required this.onUpdate});
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text("Edit Order"),
-      content: CreateOrderForm(
-        onCreate: onUpdate,
-        initialOrder: order,
+  Widget _buildStatusChip(String status) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: status == 'Active' ? Colors.green[100] : Colors.grey[300],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          color: status == 'Active' ? Colors.green[900] : Colors.grey[800],
+        ),
       ),
     );
   }
-}
 
-class CreateOrderForm extends StatefulWidget {
-  final Function(Order) onCreate;
-  final Order? initialOrder;
+  Widget _buildActionButtons(Order order) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: Icon(Icons.visibility),
+          tooltip: 'View Details',
+          onPressed: () => _showOrderDetails(order),
+        ),
+        if (order.status.name == 'Active')
+          IconButton(
+            icon: Icon(Icons.close),
+            tooltip: 'Close Order',
+            onPressed: () => _closeOrder(order),
+          ),
+      ],
+    );
+  }
 
-  CreateOrderForm({required this.onCreate, this.initialOrder});
+  void _showOrderDetails(Order order) {
+    showDialog(
+      context: context,
+      builder: (context) => OrderDetailsDialog(
+        order: order,
+        onClose: _closeOrder,
+        onProductClose: _closeProduct,
+        onCustomerView: _showCustomerDetails,
+      ),
+    );
+  }
 
-  @override
-  _CreateOrderFormState createState() => _CreateOrderFormState();
-}
+  Future<void> _closeOrder(Order order) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Close Order'),
+        content: Text('Are you sure you want to close this order?'),
+        actions: [
+          TextButton(
+            child: Text('Cancel'),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          ElevatedButton(
+            child: Text('Close Order'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
 
-class _CreateOrderFormState extends State<CreateOrderForm> {
-  final _customerNameController = TextEditingController();
-  final _productsController = TextEditingController();
-  final _orderIdController = TextEditingController();
-  final DateFormat dateFormat = DateFormat('yyyy-MM-dd');
-
-  List<Product> products = [];
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.initialOrder != null) {
-      _orderIdController.text = widget.initialOrder!.orderId;
-      _customerNameController.text = widget.initialOrder!.customerName;
-      products = widget.initialOrder!.products;
+    if (confirm == true) {
+      order.status = OrderStatus.closed;
+      await _orderDatabase.updateOrder(order);
+      _loadOrders();
     }
   }
 
-  void _saveOrder() {
-    final order = Order(
-      orderId: _orderIdController.text,
-      customerName: _customerNameController.text,
-      orderDate: DateTime.now(),
-      products: products,
+  void _closeProduct(Order order, ProductField product) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Close Product'),
+        content: Text('Are you sure you want to close this product?'),
+        actions: [
+          TextButton(
+            child: Text('Cancel'),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          ElevatedButton(
+            child: Text('Close Product'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
     );
-    widget.onCreate(order);
+
+    if (confirm == true) {
+      product.status = RentalStatus.closed;
+      await _orderDatabase.updateOrder(order);
+      _loadOrders();
+    }
   }
+
+  void _showCustomerDetails(String customerId) async {
+    final customer = await _customerDatabase.getCustomer(customerId);
+    if (customer != null && mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => CustomerDetailsDialog(customer: customer),
+      );
+    }
+  }
+}
+
+class OrderDetailsDialog extends StatelessWidget {
+  final Order order;
+  final Function(Order) onClose;
+  final Function(Order, ProductField) onProductClose;
+  final Function(String) onCustomerView;
+
+  const OrderDetailsDialog({
+    Key? key,
+    required this.order,
+    required this.onClose,
+    required this.onProductClose,
+    required this.onCustomerView,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TextField(
-          controller: _orderIdController,
-          decoration: InputDecoration(labelText: 'Order ID'),
+    return AlertDialog(
+      title: Text('Order Details'),
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Order ID: ${order.orderId}'),
+            Text('Customer: ${order.customerName}'),
+            Text('Status: ${order.status.name}'),
+            Text('Products:', style: Theme.of(context).textTheme.titleMedium),
+            ...order.products.map((product) => ListTile(
+                  title: Text(product.productName),
+                  subtitle: Text('Quantity: ${product.quantity}'),
+                  trailing: product.status != RentalStatus.closed
+                      ? IconButton(
+                          icon: Icon(Icons.close),
+                          onPressed: () => onProductClose(order, product),
+                        )
+                      : null,
+                )),
+          ],
         ),
-        TextField(
-          controller: _customerNameController,
-          decoration: InputDecoration(labelText: 'Customer Name'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => onCustomerView(order.customerId),
+          child: Text('View Customer'),
         ),
-        // Add product creation/editing here
-        ElevatedButton(
-          onPressed: _saveOrder,
-          child: Text('Save Order'),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Close'),
         ),
-        AddProductFieldsWidget()
+      ],
+    );
+  }
+}
+
+class CustomerDetailsDialog extends StatelessWidget {
+  final Customer customer;
+
+  const CustomerDetailsDialog({
+    Key? key,
+    required this.customer,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Customer Details'),
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Name: ${customer.name}'),
+          Text('ID: ${customer.id}'),
+          Text('Contact: ${customer.contact}'),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Close'),
+        ),
       ],
     );
   }

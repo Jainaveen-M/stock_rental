@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:path_provider/path_provider.dart';
 import 'package:sembast/sembast.dart';
 import 'package:sembast/sembast_io.dart';
@@ -24,6 +26,7 @@ class CustomerDatabase {
   Future<void> init() async {
     final dir = await getApplicationDocumentsDirectory();
     final dbPath = '${dir.path}/customer_database.db';
+    log("dbPath - ${dbPath}");
     _db = await databaseFactoryIo.openDatabase(dbPath);
   }
 
@@ -38,5 +41,17 @@ class CustomerDatabase {
     return records.map((snapshot) {
       return Customer.fromMap(snapshot.value);
     }).toList();
+  }
+
+  Future<Customer?> getCustomer(String id) async {
+    final snapshots = await _customerStore.find(
+      _db,
+      finder: Finder(
+        filter: Filter.equals('id', id),
+      ),
+    );
+
+    if (snapshots.isEmpty) return null;
+    return Customer.fromMap(snapshots.first.value);
   }
 }
