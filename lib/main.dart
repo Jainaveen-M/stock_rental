@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:stock_rental/customer/customer_dashboard.dart';
+import 'package:stock_rental/order/order_dashboard.dart';
 import 'package:stock_rental/product/product.dart';
 import 'package:stock_rental/repo/customer_db_helper.dart';
+import 'package:stock_rental/repo/order_db_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await CustomerDatabase().init();
+  await OrderDatabase().init();
   runApp(MyApp());
 }
 
@@ -105,7 +108,14 @@ class DashboardScreen extends StatelessWidget {
                   style: TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ),
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => OrdersDashboard(),
+                  ),
+                );
+              },
             ),
             ListTile(
               leading: const Icon(Icons.chat),

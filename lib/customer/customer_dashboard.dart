@@ -104,6 +104,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Text('ID: ${customer.id}'),
                             Text('Phone: ${customer.phoneNumber}'),
                             Text('Address: ${customer.address}'),
                           ],

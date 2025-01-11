@@ -31,4 +31,13 @@ class Product {
       price: map['price'],
     );
   }
+
+  static Product fromMap2(Map<String, dynamic> map) {
+    return Product(
+      id: map['id'],
+      name: map['name'],
+      category: map['category'],
+      price: map['price'],
+    );
+  }
 }
