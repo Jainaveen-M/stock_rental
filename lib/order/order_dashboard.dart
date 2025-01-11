@@ -96,19 +96,59 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Orders Management'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.add),
-            onPressed: _createNewOrder,
-            tooltip: 'Create New Order',
-          ),
-        ],
+        elevation: 0,
       ),
       body: Column(
         children: [
-          _buildFilterSection(),
-          Expanded(child: _buildOrdersTable()),
+          Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
+              ),
+            ),
+            child: Column(
+              children: [
+                _buildFilterSection(),
+                SizedBox(height: 16),
+                Row(
+                  children: [
+                    _buildStatCard(
+                      'Active Orders',
+                      orders
+                          .where((o) => o.status == OrderStatus.active)
+                          .length
+                          .toString(),
+                      Icons.pending_actions,
+                      Colors.blue,
+                    ),
+                    SizedBox(width: 16),
+                    _buildStatCard(
+                      'Completed',
+                      orders
+                          .where((o) => o.status == OrderStatus.closed)
+                          .length
+                          .toString(),
+                      Icons.check_circle_outline,
+                      Colors.green,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _buildOrdersTable(),
+          ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _createNewOrder,
+        label: Text('New Order'),
+        icon: Icon(Icons.add),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
     );
   }
@@ -145,49 +185,132 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
     );
   }
 
-  Widget _buildOrdersTable() {
-    return DataTable2(
-      columns: [
-        DataColumn2(label: Text('Order ID'), size: ColumnSize.S),
-        DataColumn2(label: Text('Customer'), size: ColumnSize.M),
-        DataColumn2(label: Text('Order Date'), size: ColumnSize.M),
-        DataColumn2(label: Text('Status'), size: ColumnSize.S),
-        DataColumn2(label: Text('Products'), size: ColumnSize.S),
-        DataColumn2(label: Text('Actions'), size: ColumnSize.L),
-      ],
-      rows: _getFilteredOrders().map((order) {
-        bool hasExpiredProducts = order.endDate != null &&
-            order.endDate!.isBefore(DateTime.now()) &&
-            order.status != OrderStatus.closed;
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
+    return Expanded(
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color),
+              ),
+              SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-        return DataRow2(
-          color: hasExpiredProducts
-              ? MaterialStateProperty.all(Colors.red.shade100)
-              : null,
-          cells: [
-            DataCell(Text(order.orderId.toString())),
-            DataCell(Text(order.customerName)),
-            DataCell(Text(dateFormat.format(order.orderDate))),
-            DataCell(_buildStatusChip(order.status.name)),
-            DataCell(Text('${order.products.length} items')),
-            DataCell(_buildActionButtons(order)),
-          ],
-        );
-      }).toList(),
+  Widget _buildOrdersTable() {
+    return Card(
+      margin: EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      elevation: 4,
+      child: DataTable2(
+        columnSpacing: 12,
+        horizontalMargin: 12,
+        columns: [
+          DataColumn2(label: Text('Order ID'), size: ColumnSize.S),
+          DataColumn2(label: Text('Customer'), size: ColumnSize.M),
+          DataColumn2(label: Text('Start Date'), size: ColumnSize.M),
+          DataColumn2(label: Text('End Date'), size: ColumnSize.M),
+          DataColumn2(label: Text('Status'), size: ColumnSize.S),
+          DataColumn2(label: Text('Actions'), size: ColumnSize.L),
+        ],
+        rows: _getFilteredOrders().map((order) {
+          bool isExpired = order.endDate != null &&
+              order.endDate!.isBefore(DateTime.now()) &&
+              order.status != OrderStatus.closed;
+
+          return DataRow2(
+            color: isExpired
+                ? MaterialStateProperty.all(Colors.red.shade50)
+                : null,
+            cells: [
+              DataCell(Text(
+                '#${order.orderId.toString()}',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              )),
+              DataCell(Text(order.customerName)),
+              DataCell(
+                  Text(dateFormat.format(order.startDate ?? order.orderDate))),
+              DataCell(Text(order.endDate != null
+                  ? dateFormat.format(order.endDate!)
+                  : 'Not set')),
+              DataCell(_buildStatusChip(order.status.name)),
+              DataCell(_buildActionButtons(order)),
+            ],
+          );
+        }).toList(),
+      ),
     );
   }
 
   Widget _buildStatusChip(String status) {
+    Color bgColor;
+    Color textColor;
+
+    switch (status) {
+      case 'Active':
+        bgColor = Colors.green.shade100;
+        textColor = Colors.green.shade900;
+        break;
+      case 'Closed':
+        bgColor = Colors.grey.shade200;
+        textColor = Colors.grey.shade800;
+        break;
+      default:
+        bgColor = Colors.orange.shade100;
+        textColor = Colors.orange.shade900;
+    }
+
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: status == 'Active' ? Colors.green[100] : Colors.grey[300],
-        borderRadius: BorderRadius.circular(12),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         status,
         style: TextStyle(
-          color: status == 'Active' ? Colors.green[900] : Colors.grey[800],
+          color: textColor,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
         ),
       ),
     );
