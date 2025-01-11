@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:stock_rental/customer/customer_test.dart';
+import 'package:stock_rental/customer/customer_dashboard.dart';
 import 'package:stock_rental/product/product.dart';
 import 'package:stock_rental/repo/customer_db_helper.dart';
 
@@ -41,11 +41,11 @@ class DashboardScreen extends StatelessWidget {
                 icon: const Icon(Icons.notifications_none, color: Colors.black),
                 onPressed: () {},
               ),
-              const CircleAvatar(
-                backgroundImage: AssetImage(
-                    'assets/profile_image.png'), // Replace with your asset
-                radius: 18,
-              ),
+              // const CircleAvatar(
+              //   backgroundImage: AssetImage(
+              //       'assets/profile_image.png'), // Replace with your asset
+              //   radius: 18,
+              // ),
               const SizedBox(width: 16),
             ],
           ),
@@ -69,7 +69,7 @@ class DashboardScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => CustomerListScreen(),
+                    builder: (context) => CustomerDashboard(),
                   ),
                 );
               },

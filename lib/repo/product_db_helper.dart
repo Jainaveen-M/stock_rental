@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:path_provider/path_provider.dart';
 import 'package:sembast/sembast.dart';
 import 'package:sembast/sembast_io.dart';
@@ -17,6 +19,7 @@ class ProductDatabase {
   Future<Database> get database async {
     if (_database == null) {
       final dir = await getApplicationDocumentsDirectory();
+      log("Path stores the product - ${dir.path}");
       final dbPath = '${dir.path}/products.db';
       _database = await databaseFactoryIo.openDatabase(dbPath);
     }

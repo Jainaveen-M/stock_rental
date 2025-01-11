@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:stock_rental/model/customer.dart';
 import 'package:stock_rental/repo/customer_db_helper.dart';
 
-class CustomerListScreen extends StatefulWidget {
+class CustomerDashboard extends StatefulWidget {
   @override
-  _CustomerListScreenState createState() => _CustomerListScreenState();
+  _CustomerDashboardState createState() => _CustomerDashboardState();
 }
 
-class _CustomerListScreenState extends State<CustomerListScreen> {
+class _CustomerDashboardState extends State<CustomerDashboard> {
   late Future<List<Customer>> _customersFuture;
   List<Customer> _allCustomers = [];
   List<Customer> _filteredCustomers = [];
@@ -219,15 +219,4 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       },
     );
   }
-}
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await CustomerDatabase().init(); // Initialize Sembast database
-  runApp(
-    MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: CustomerListScreen(),
-    ),
-  );
 }
