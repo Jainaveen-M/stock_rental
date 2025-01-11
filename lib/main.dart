@@ -4,6 +4,7 @@ import 'package:stock_rental/order/order_dashboard.dart';
 import 'package:stock_rental/product/product.dart';
 import 'package:stock_rental/repo/customer_db_helper.dart';
 import 'package:stock_rental/repo/order_db_helper.dart';
+import 'package:stock_rental/repo/product_db_helper.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 void main() async {
@@ -23,214 +24,304 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
+  @override
+  _DashboardScreenState createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  List<dynamic> _products = [];
+  List<dynamic> _customers = [];
+  List<dynamic> _orders = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final productDb = ProductDatabase();
+    final customerDb = CustomerDatabase();
+    final orderDb = OrderDatabase();
+
+    final products = await productDb.getProducts();
+    final customers = await customerDb.getAllCustomers();
+    final orders = await orderDb.getAllOrders();
+
+    setState(() {
+      _products = products;
+      _customers = customers;
+      _orders = orders;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          "Hi, Taylor Kareem!",
-          style: TextStyle(color: Colors.black, fontSize: 20),
+        title: Row(
+          children: [
+            Icon(Icons.inventory, color: Colors.green),
+            SizedBox(width: 8),
+            Text('INVENTORY'),
+          ],
         ),
         actions: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.search, color: Colors.black),
-                onPressed: () {},
-              ),
-              IconButton(
-                icon: const Icon(Icons.notifications_none, color: Colors.black),
-                onPressed: () {},
-              ),
-              // const CircleAvatar(
-              //   backgroundImage: AssetImage(
-              //       'assets/profile_image.png'), // Replace with your asset
-              //   radius: 18,
-              // ),
-              const SizedBox(width: 16),
-            ],
+          IconButton(icon: Icon(Icons.notifications), onPressed: () {}),
+          CircleAvatar(
+            backgroundImage: AssetImage('assets/profile.png'),
+            radius: 15,
           ),
+          PopupMenuButton(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Text('Hachib'),
+                  Icon(Icons.arrow_drop_down),
+                ],
+              ),
+            ),
+            itemBuilder: (context) => [],
+          ),
+          IconButton(icon: Icon(Icons.settings), onPressed: () {}),
         ],
       ),
       drawer: Drawer(
         child: ListView(
-          padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Text(
-                'Dakota',
-                style: TextStyle(color: Colors.white, fontSize: 24),
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.inventory, color: Colors.green),
+                      SizedBox(width: 8),
+                      Text('INVENTORY',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ],
               ),
             ),
-            ListTile(
-              leading: SvgPicture.asset(
-                'assets/customer_icon.svg',
-                width: 24,
-                height: 24,
-                colorFilter: ColorFilter.mode(
-                  Theme.of(context).colorScheme.primary,
-                  BlendMode.srcIn,
-                ),
-              ),
-              title: Text('Customers'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CustomerDashboard(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.dashboard),
-              title: const Text('Product'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProductScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.receipt_long),
-              title: const Text('Order'),
-              trailing: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  '5',
-                  style: TextStyle(color: Colors.white, fontSize: 12),
-                ),
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => OrdersDashboard(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.chat),
-              title: const Text('Chat'),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.pages),
-              title: const Text('Special Pages'),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.book),
-              title: const Text('Documentation'),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              onTap: () {},
-            ),
+            _buildDrawerItem(Icons.dashboard, 'Dashboard', true),
+            _buildDrawerItem(Icons.inventory_2, 'Inventory', false),
+            _buildDrawerItem(Icons.shopping_cart, 'Purchase', false),
+            _buildDrawerItem(
+                Icons.assignment_return, 'Suppliers Return', false),
+            _buildDrawerItem(Icons.receipt, 'Invoice', false),
+            _buildDrawerItem(Icons.point_of_sale, 'Sales', false),
+            _buildDrawerItem(Icons.receipt_long, 'Bill', false),
+            _buildDrawerItem(Icons.people, 'Customers', false),
+            _buildDrawerItem(Icons.business, 'Suppliers', false),
           ],
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Sales Analytics Section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Dashboard',
+                    style:
+                        TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                Row(
+                  children: [
+                    DropdownButton(
+                      value: 'Month to date',
+                      items: ['Month to date', 'Year to date']
+                          .map(
+                              (e) => DropdownMenuItem(value: e, child: Text(e)))
+                          .toList(),
+                      onChanged: (value) {},
+                    ),
+                    SizedBox(width: 16),
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.file_download),
+                      label: Text('Export'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green[100],
+                        foregroundColor: Colors.green[900],
+                      ),
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
+              ],
+            ),
             Row(
               children: [
                 Expanded(
-                  flex: 2,
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          blurRadius: 10,
-                          spreadRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          "Sales Analytics",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 8),
-                        // Placeholder for chart or analytics content
-                        Text("Graph Placeholder"),
-                      ],
+                  child: _buildNavigationCard(
+                    'Products',
+                    'Manage your inventory',
+                    Icons.inventory_2,
+                    Colors.blue,
+                    '${_products.length} items',
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ProductScreen()),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
-                  flex: 1,
-                  child: Column(
-                    children: [
-                      // Visitor Section
-                      _buildInfoCard("Visitor", "6,354"),
-                      const SizedBox(height: 16),
-                      // Product Section
-                      _buildInfoCard("Product", "\$5363"),
-                      const SizedBox(height: 16),
-                      // Bounce Rate Section
-                      _buildInfoCard("Bounce Rate", "200%"),
+                  child: _buildNavigationCard(
+                    'Customers',
+                    'View customer details',
+                    Icons.people,
+                    Colors.green,
+                    '${_customers.length} customers',
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => CustomerDashboard()),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: _buildNavigationCard(
+                    'Orders',
+                    'Manage rental orders',
+                    Icons.shopping_cart,
+                    Colors.orange,
+                    '${_orders.length} orders',
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => OrdersDashboard()),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildOverviewCard(
+                    'Sales Overview',
+                    [
+                      _buildMetric('Total Sales', '786', Icons.shopping_cart,
+                          Colors.blue[100]!),
+                      _buildMetric('Revenue', '17584', Icons.attach_money,
+                          Colors.orange[100]!),
+                      _buildMetric('Cost', '12487', Icons.trending_down,
+                          Colors.red[100]!),
+                      _buildMetric('Profit', '5097', Icons.trending_up,
+                          Colors.green[100]!),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: _buildOverviewCard(
+                    'Purchase Overview',
+                    [
+                      _buildMetric('No of Purchase', '45', Icons.shopping_bag,
+                          Colors.purple[100]!),
+                      _buildMetric(
+                          'Cancel Order', '04', Icons.cancel, Colors.red[100]!),
+                      _buildMetric('Cost', '786', Icons.trending_down,
+                          Colors.orange[100]!),
+                      _buildMetric('Returns', '07', Icons.assignment_return,
+                          Colors.blue[100]!),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            // Last Invoice Section
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 10,
-                    spreadRadius: 5,
+            SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSummaryCard(
+                    'Inventory Summary',
+                    [
+                      _buildSummaryItem('Quantity in Hand', '214',
+                          Icons.inventory_2, Colors.green),
+                      _buildSummaryItem('Will be Received', '44',
+                          Icons.local_shipping, Colors.orange),
+                    ],
                   ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    "Last Invoice",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: _buildDetailsCard(
+                    'Product Details',
+                    [
+                      _buildDetailRow('Low Stock Items', '02'),
+                      _buildDetailRow('Item Group', '14'),
+                      _buildDetailRow('No of Items', '104'),
+                    ],
                   ),
-                  SizedBox(height: 8),
-                  Text("Invoice Table Placeholder"),
-                ],
-              ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: _buildSummaryCard(
+                    'No. of Users',
+                    [
+                      _buildSummaryItem(
+                          'Total Customers', '1.8k', Icons.people, Colors.blue),
+                      _buildSummaryItem('Total Suppliers', '27', Icons.business,
+                          Colors.purple),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 24),
+            SizedBox(height: 24),
+            _buildChart(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(IconData icon, String title, bool isSelected) {
+    return ListTile(
+      leading: Icon(icon, color: isSelected ? Colors.green : Colors.grey),
+      title: Text(title,
+          style:
+              TextStyle(color: isSelected ? Colors.green : Colors.grey[600])),
+      selected: isSelected,
+      onTap: () {},
+    );
+  }
+
+  Widget _buildOverviewCard(String title, List<Widget> metrics) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(title,
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Icon(Icons.more_vert),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              children:
+                  metrics.map((metric) => Expanded(child: metric)).toList(),
             ),
           ],
         ),
@@ -238,32 +329,198 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  static Widget _buildInfoCard(String title, String value) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            spreadRadius: 5,
-          ),
+  Widget _buildMetric(
+      String title, String value, IconData icon, Color backgroundColor) {
+    return Card(
+      elevation: 0,
+      color: backgroundColor.withOpacity(0.2),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, size: 20),
+                ),
+                SizedBox(width: 8),
+                Text(title,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              ],
+            ),
+            SizedBox(height: 12),
+            Text(value,
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(String title, List<Widget> items) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(title,
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Icon(Icons.more_vert),
+              ],
+            ),
+            SizedBox(height: 16),
+            ...items,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem(
+      String title, String value, IconData icon, Color color) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: color),
+          SizedBox(width: 12),
+          Expanded(child: Text(title)),
+          Text(value,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         ],
       ),
-      child: Column(
+    );
+  }
+
+  Widget _buildDetailsCard(String title, List<Widget> rows) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(title,
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Icon(Icons.more_vert),
+              ],
+            ),
+            SizedBox(height: 16),
+            ...rows,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 14, color: Colors.grey),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
+          Text(label),
+          Text(value,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildChart() {
+    // TODO: Implement chart
+    return Container(height: 300);
+  }
+
+  Widget _buildNavigationCard(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    String count,
+    VoidCallback onTap,
+  ) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: color, size: 24),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    count,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward, color: color),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
