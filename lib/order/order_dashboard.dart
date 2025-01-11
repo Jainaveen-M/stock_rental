@@ -147,7 +147,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                     SizedBox(height: 16),
                     _buildStatCard(
                       'Total Revenue',
-                      '\$${totalRevenue.toStringAsFixed(2)}',
+                      '₹${totalRevenue.toStringAsFixed(2)}',
                       Icons.attach_money,
                       Colors.purple,
                     ),

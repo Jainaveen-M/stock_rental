@@ -360,7 +360,7 @@ class ProductFieldWidget extends StatelessWidget {
                     items: products.map((product) {
                       return DropdownMenuItem(
                         value: product,
-                        child: Text('${product.name} (\$${product.price}/day)'),
+                        child: Text('${product.name} (₹${product.price}/day)'),
                       );
                     }).toList(),
                     onChanged: (Product? value) {
@@ -410,7 +410,7 @@ class ProductFieldWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Price: \$${(productField.price ?? 0).toStringAsFixed(2)}/day',
+                          'Price: ₹${(productField.price ?? 0).toStringAsFixed(2)}/day',
                           style: TextStyle(fontSize: 12),
                         ),
                         if (startDate != null && endDate != null)
@@ -419,7 +419,7 @@ class ProductFieldWidget extends StatelessWidget {
                             style: TextStyle(fontSize: 12),
                           ),
                         Text(
-                          'Total: \$${totalPrice.toStringAsFixed(2)}',
+                          'Total: ₹${totalPrice.toStringAsFixed(2)}',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).primaryColor,
@@ -487,16 +487,16 @@ class OrderPreviewDialog extends StatelessWidget {
                       children: [
                         Text('Quantity: ${product.quantity}'),
                         Text(
-                            'Price: \$${(product.price ?? 0).toStringAsFixed(2)}'),
+                            'Price: ₹${(product.price ?? 0).toStringAsFixed(2)}'),
                         Text(
-                            'Total: \$${(product.quantity * (product.price ?? 0)).toStringAsFixed(2)}'),
+                            'Total: ₹${(product.quantity * (product.price ?? 0)).toStringAsFixed(2)}'),
                       ],
                     ),
                   ),
                 )),
             Divider(),
             Text(
-              'Order Total: \$${orderTotal.toStringAsFixed(2)}',
+              'Order Total: ₹${orderTotal.toStringAsFixed(2)}',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
