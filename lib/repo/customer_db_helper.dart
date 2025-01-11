@@ -54,4 +54,13 @@ class CustomerDatabase {
     if (snapshots.isEmpty) return null;
     return Customer.fromMap(snapshots.first.value);
   }
+
+  Future<void> deleteCustomer(String id) async {
+    await _customerStore.delete(
+      _db,
+      finder: Finder(
+        filter: Filter.equals('id', id),
+      ),
+    );
+  }
 }

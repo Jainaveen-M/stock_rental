@@ -389,7 +389,7 @@ class CustomerDetailsDialog extends StatelessWidget {
         children: [
           Text('Name: ${customer.name}'),
           Text('ID: ${customer.id}'),
-          Text('Contact: ${customer.contact}'),
+          Text('Contact: ${customer.phoneNumber}'),
         ],
       ),
       actions: [

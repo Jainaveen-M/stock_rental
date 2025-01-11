@@ -1,37 +1,27 @@
 class Customer {
-  final String id; // Unique ID for the customer
+  final String id;
   final String name;
   final String phoneNumber;
   final String address;
-  final String contact;
 
   Customer({
     required this.id,
     required this.name,
     required this.phoneNumber,
     required this.address,
-    required this.contact,
   });
 
-  // Convert a Customer object to a Map
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'phoneNumber': phoneNumber,
-      'address': address,
-      'contact': contact,
-    };
-  }
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'name': name,
+        'phoneNumber': phoneNumber,
+        'address': address,
+      };
 
-  // Convert a Map to a Customer object
-  factory Customer.fromMap(Map<String, dynamic> map) {
-    return Customer(
-      id: map['id'] as String,
-      name: map['name'] as String,
-      phoneNumber: map['phoneNumber'] as String,
-      address: map['address'] as String,
-      contact: map['contact'] ?? '',
-    );
-  }
+  factory Customer.fromMap(Map<String, dynamic> map) => Customer(
+        id: map['id'] ?? '',
+        name: map['name'] ?? '',
+        phoneNumber: map['phoneNumber'] ?? '',
+        address: map['address'] ?? '',
+      );
 }

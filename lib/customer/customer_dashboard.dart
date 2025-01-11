@@ -8,217 +8,238 @@ class CustomerDashboard extends StatefulWidget {
 }
 
 class _CustomerDashboardState extends State<CustomerDashboard> {
-  late Future<List<Customer>> _customersFuture;
-  List<Customer> _allCustomers = [];
-  List<Customer> _filteredCustomers = [];
-  final TextEditingController _searchController = TextEditingController();
+  final _customerDatabase = CustomerDatabase();
+  List<Customer> customers = [];
+  final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _fetchCustomers();
-    _searchController.addListener(_filterCustomers);
+    _loadCustomers();
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _fetchCustomers() async {
-    _customersFuture = CustomerDatabase().getAllCustomers();
-    final customers = await _customersFuture;
+  Future<void> _loadCustomers() async {
+    final loadedCustomers = await _customerDatabase.getAllCustomers();
     setState(() {
-      _allCustomers = customers;
-      _filteredCustomers = customers;
+      customers = loadedCustomers;
     });
   }
 
-  void _filterCustomers() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      _filteredCustomers = _allCustomers.where((customer) {
-        return customer.name.toLowerCase().contains(query) ||
-            customer.phoneNumber.toLowerCase().contains(query) ||
-            customer.address.toLowerCase().contains(query);
-      }).toList();
-    });
+  void _showAddCustomerDialog() {
+    final nameController = TextEditingController();
+    final contactController = TextEditingController();
+    final addressController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Container(
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            color: Colors.white,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Add New Customer',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+              SizedBox(height: 20),
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: 'Customer Name',
+                  prefixIcon: Icon(Icons.person),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                ),
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: contactController,
+                decoration: InputDecoration(
+                  labelText: 'Contact Number',
+                  prefixIcon: Icon(Icons.phone),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: addressController,
+                decoration: InputDecoration(
+                  labelText: 'Address',
+                  prefixIcon: Icon(Icons.location_on),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                ),
+                maxLines: 2,
+              ),
+              SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Cancel'),
+                    style: TextButton.styleFrom(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (nameController.text.isNotEmpty &&
+                          contactController.text.isNotEmpty) {
+                        final newCustomer = Customer(
+                          id: DateTime.now().millisecondsSinceEpoch.toString(),
+                          name: nameController.text,
+                          phoneNumber: contactController.text,
+                          address: addressController.text,
+                        );
+                        await _customerDatabase.addCustomer(newCustomer);
+                        _loadCustomers();
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: Text('Add Customer'),
+                    style: ElevatedButton.styleFrom(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Customer List'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              _showAddCustomerDialog(context);
-            },
-          ),
-        ],
+        title: Text('Customer Management'),
+        elevation: 0,
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(16),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                labelText: 'Search Customers',
-                border: OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.search),
+                hintText: 'Search customers...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                filled: true,
+                fillColor: Colors.grey[100],
               ),
+              onChanged: (value) => setState(() {}),
             ),
           ),
           Expanded(
-            child: FutureBuilder<List<Customer>>(
-              future: _customersFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(
-                    child: Text('Error: ${snapshot.error}'),
-                  );
-                } else if (_filteredCustomers.isEmpty) {
-                  return const Center(
-                    child: Text('No customers found'),
-                  );
-                }
-
-                return ListView.builder(
-                  itemCount: _filteredCustomers.length,
-                  itemBuilder: (context, index) {
-                    final customer = _filteredCustomers[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 16),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          child: Text(customer.name[0]),
-                        ),
-                        title: Text(customer.name),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('ID: ${customer.id}'),
-                            Text('Phone: ${customer.phoneNumber}'),
-                            Text('Address: ${customer.address}'),
-                          ],
+            child: ListView.builder(
+              padding: EdgeInsets.all(16),
+              itemCount: customers
+                  .where((customer) => customer.name
+                      .toLowerCase()
+                      .contains(_searchController.text.toLowerCase()))
+                  .length,
+              itemBuilder: (context, index) {
+                final filteredCustomers = customers
+                    .where((customer) => customer.name
+                        .toLowerCase()
+                        .contains(_searchController.text.toLowerCase()))
+                    .toList();
+                final customer = filteredCustomers[index];
+                return Card(
+                  elevation: 2,
+                  margin: EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ListTile(
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    leading: CircleAvatar(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      child: Text(
+                        customer.name[0].toUpperCase(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    );
-                  },
+                    ),
+                    title: Text(
+                      customer.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    subtitle: Text(
+                      customer.phoneNumber,
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () {
+                            // Implement edit functionality
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            await _customerDatabase.deleteCustomer(customer.id);
+                            _loadCustomers();
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               },
             ),
           ),
         ],
       ),
-    );
-  }
-
-  void _showAddCustomerDialog(BuildContext context) {
-    final _nameController = TextEditingController();
-    final _phoneController = TextEditingController();
-    final _addressController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Add Customer',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Customer Name',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Phone Number',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _addressController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Address',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final name = _nameController.text;
-                        final phone = _phoneController.text;
-                        final address = _addressController.text;
-
-                        if (name.isNotEmpty &&
-                            phone.isNotEmpty &&
-                            address.isNotEmpty) {
-                          final newCustomer = Customer(
-                            id: DateTime.now()
-                                .millisecondsSinceEpoch
-                                .toString(),
-                            name: name,
-                            phoneNumber: phone,
-                            address: address,
-                            contact: phone,
-                          );
-
-                          await CustomerDatabase().addCustomer(newCustomer);
-                          setState(() {
-                            _fetchCustomers(); // Refresh the customer list
-                          });
-                          Navigator.of(context).pop();
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please fill all fields'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
-                      child: const Text('Add'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showAddCustomerDialog,
+        label: Text('Add Customer'),
+        icon: Icon(Icons.add),
+      ),
     );
   }
 }

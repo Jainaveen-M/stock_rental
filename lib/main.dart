@@ -4,6 +4,7 @@ import 'package:stock_rental/order/order_dashboard.dart';
 import 'package:stock_rental/product/product.dart';
 import 'package:stock_rental/repo/customer_db_helper.dart';
 import 'package:stock_rental/repo/order_db_helper.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,8 +67,16 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.dashboard),
-              title: const Text('Customer Dashboard'),
+              leading: SvgPicture.asset(
+                'assets/customer_icon.svg',
+                width: 24,
+                height: 24,
+                colorFilter: ColorFilter.mode(
+                  Theme.of(context).colorScheme.primary,
+                  BlendMode.srcIn,
+                ),
+              ),
+              title: Text('Customers'),
               onTap: () {
                 Navigator.push(
                   context,
