@@ -484,13 +484,15 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
   }
 
   void _showBillPreview(Order order) {
-    showDialog(
-      context: context,
-      builder: (context) => RetailBillPreview(
-        order: order,
-        rentalDays: order.endDate != null && order.startDate != null
-            ? order.endDate!.difference(order.startDate!).inDays + 1
-            : 1,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RetailBillPreview(
+          order: order,
+          rentalDays: order.endDate != null && order.startDate != null
+              ? order.endDate!.difference(order.startDate!).inDays + 1
+              : 1,
+        ),
       ),
     );
   }

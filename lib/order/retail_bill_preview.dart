@@ -17,158 +17,216 @@ class RetailBillPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double orderTotal = order.products.fold<double>(
+    double subtotal = order.products.fold<double>(
       0,
       (sum, product) =>
           (sum + (product.quantity * (product.price ?? 0) * rentalDays))
               .toDouble(),
     );
+    double tax = subtotal * 0.05;
+    double total = subtotal + tax;
 
-    return Dialog(
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.7,
-        height: MediaQuery.of(context).size.height * 0.8,
-        padding: EdgeInsets.all(32),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Invoice Preview'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.print),
+            onPressed: () => _printBill(context, total),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Center(
+          child: Container(
+            padding: EdgeInsets.all(32),
+            constraints: BoxConstraints(maxWidth: 800),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'RENTAL INVOICE',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.print),
-                      label: Text('Print'),
-                      onPressed: () => _printBill(context, orderTotal),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
+                    Text(
+                      'INVOICE',
+                      style: TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.w300,
+                        color: Colors.grey[700],
                       ),
                     ),
-                    SizedBox(width: 16),
-                    IconButton(
-                      icon: Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('INVOICE #'),
+                            Text('INVOICE DATE'),
+                            Text('DUE DATE'),
+                          ],
+                        ),
+                        SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(order.orderId.toString()),
+                            Text(DateFormat('MM/dd/yyyy')
+                                .format(order.orderDate)),
+                            Text(DateFormat('MM/dd/yyyy')
+                                .format(order.endDate ?? order.orderDate)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                SizedBox(height: 48),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('MY COMPANY NAME',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text('1520 E. John Galt Drive'),
+                          Text('Suite 300 Box'),
+                          Text('Provo, UT 84001'),
+                          Text('808.868.8686'),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('BILL TO:',
+                              style: TextStyle(color: Colors.grey)),
+                          Text(order.customerName,
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text('Customer ID: ${order.customerId}'),
+                          if (order.startDate != null)
+                            Text(
+                                'Rental Start: ${DateFormat('MM/dd/yyyy').format(order.startDate!)}'),
+                          if (order.endDate != null)
+                            Text(
+                                'Rental End: ${DateFormat('MM/dd/yyyy').format(order.endDate!)}'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 48),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(flex: 3, child: Text('PRODUCTS / SERVICES')),
+                          Expanded(child: Text('QTY')),
+                          Expanded(child: Text('PRICE/DAY')),
+                          Expanded(child: Text('TOTAL')),
+                        ],
+                      ),
+                      ...order.products.map((product) {
+                        final total = (product.quantity *
+                                (product.price ?? 0) *
+                                rentalDays)
+                            .toDouble();
+                        return Container(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            border: Border(
+                                bottom:
+                                    BorderSide(color: Colors.grey.shade200)),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                  flex: 3, child: Text(product.productName)),
+                              Expanded(child: Text('${product.quantity}')),
+                              Expanded(
+                                  child: Text(
+                                      '₹${(product.price ?? 0).toStringAsFixed(2)}')),
+                              Expanded(
+                                  child: Text('₹${total.toStringAsFixed(2)}')),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Column(
+                    children: [
+                      _buildTotalRow('SUBTOTAL', subtotal),
+                      _buildTotalRow('TAX 5%', tax),
+                      SizedBox(height: 8),
+                      Container(
+                        color: Colors.grey.shade200,
+                        padding: EdgeInsets.all(16),
+                        child: _buildTotalRow('AMOUNT DUE', total),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('PAYMENT METHODS',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        SizedBox(height: 8),
+                        Text('BANK INFO'),
+                        Text('Bank Name Goes Here'),
+                        Text('Bank Account: 12345678'),
+                        SizedBox(height: 8),
+                        Text('PAYPAL'),
+                        Text('mycompanyname@email.com'),
+                      ],
+                    ),
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.print),
+                      label: Text('Print Invoice'),
+                      onPressed: () => _printBill(context, total),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      ),
                     ),
                   ],
                 ),
               ],
             ),
-            Divider(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Invoice No: ${order.orderId}',
-                        style: TextStyle(fontSize: 16)),
-                    Text(
-                        'Date: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}',
-                        style: TextStyle(fontSize: 16)),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('Rental Period: $rentalDays days',
-                        style: TextStyle(fontSize: 16)),
-                    if (order.startDate != null)
-                      Text(
-                          'From: ${DateFormat('dd/MM/yyyy').format(order.startDate!)}',
-                          style: TextStyle(fontSize: 16)),
-                    if (order.endDate != null)
-                      Text(
-                          'To: ${DateFormat('dd/MM/yyyy').format(order.endDate!)}',
-                          style: TextStyle(fontSize: 16)),
-                  ],
-                ),
-              ],
-            ),
-            SizedBox(height: 24),
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Customer Details:',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 8),
-                  Text('Name: ${order.customerName}',
-                      style: TextStyle(fontSize: 16)),
-                  Text('ID: ${order.customerId}',
-                      style: TextStyle(fontSize: 16)),
-                ],
-              ),
-            ),
-            SizedBox(height: 24),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SingleChildScrollView(
-                  child: DataTable(
-                    columns: [
-                      DataColumn(label: Text('Item')),
-                      DataColumn(label: Text('Qty')),
-                      DataColumn(label: Text('Rate/Day')),
-                      DataColumn(label: Text('Days')),
-                      DataColumn(label: Text('Amount')),
-                    ],
-                    rows: order.products.map((product) {
-                      double total =
-                          (product.quantity * (product.price ?? 0) * rentalDays)
-                              .toDouble();
-                      return DataRow(cells: [
-                        DataCell(Text(product.productName)),
-                        DataCell(Text('${product.quantity}')),
-                        DataCell(Text(
-                            '₹${(product.price ?? 0).toStringAsFixed(2)}')),
-                        DataCell(Text('$rentalDays')),
-                        DataCell(Text('₹${total.toStringAsFixed(2)}')),
-                      ]);
-                    }).toList(),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: 24),
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Total Amount:',
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  Text('₹${orderTotal.toStringAsFixed(2)}',
-                      style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor)),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTotalRow(String label, double amount) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          SizedBox(width: 120, child: Text(label)),
+          SizedBox(width: 24),
+          Text('₹${amount.toStringAsFixed(2)}',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+        ],
       ),
     );
   }
