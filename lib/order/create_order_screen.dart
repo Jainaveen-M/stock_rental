@@ -6,6 +6,8 @@ import 'package:stock_rental/model/customer.dart';
 import 'package:stock_rental/model/product_filed.dart';
 import 'package:stock_rental/repo/product_db_helper.dart';
 import 'package:stock_rental/order/retail_bill_preview.dart';
+import 'package:stock_rental/model/payment.dart';
+import 'package:stock_rental/repo/payment_db_helper.dart';
 
 class SearchableDropdown extends StatelessWidget {
   final List<Customer> customers;
@@ -147,6 +149,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   DateTime? startDate;
   DateTime? endDate;
   final _formKey = GlobalKey<FormState>();
+  final _advanceController = TextEditingController();
+  String _selectedPaymentMode = 'cash';
+  final _paymentDatabase = PaymentDatabase();
 
   @override
   void initState() {
@@ -179,6 +184,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     }
   }
 
+  double _calculateTotal() {
+    return productFields.fold<double>(
+      0.0,
+      (sum, product) =>
+          sum + (product.quantity * (product.price ?? 0) * _getRentalDays()),
+    );
+  }
+
   void _saveOrder() async {
     if (selectedCustomer == null ||
         productFields.isEmpty ||
@@ -209,6 +222,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       }
     }
 
+    final totalAmount = _calculateTotal();
+    final advanceAmount = double.tryParse(_advanceController.text) ?? 0.0;
+    final balanceAmount = totalAmount - advanceAmount;
+
     final newOrder = Order(
       orderId: DateTime.now().millisecondsSinceEpoch,
       customerName: selectedCustomer!.name,
@@ -218,10 +235,25 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       endDate: endDate,
       products: productFields,
       status: OrderStatus.active,
+      advanceAmount: advanceAmount,
+      totalAmount: totalAmount,
     );
 
     await _updateProductRentals(productFields);
     widget.onCreate(newOrder);
+
+    // Save the payment record
+    final payment = Payment(
+      orderId: newOrder.orderId,
+      totalAmount: totalAmount,
+      advanceAmount: advanceAmount,
+      balanceAmount: balanceAmount,
+      paymentDate: DateTime.now(),
+      paymentMode: _selectedPaymentMode,
+      status: balanceAmount > 0 ? 'partial' : 'completed',
+    );
+
+    await _paymentDatabase.savePayment(payment);
   }
 
   void _previewOrder() async {
@@ -442,6 +474,77 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         ],
                       ),
                     ),
+                    Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Payment Details',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold)),
+                          SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                        'Total Amount: ₹${_calculateTotal().toStringAsFixed(2)}',
+                                        style: TextStyle(fontSize: 16)),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(width: 16),
+                              Expanded(
+                                child: TextField(
+                                  controller: _advanceController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Advance Amount',
+                                    prefixText: '₹',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (value) => setState(() {}),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Balance: ₹${(_calculateTotal() - (double.tryParse(_advanceController.text) ?? 0)).toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            value: _selectedPaymentMode,
+                            decoration: InputDecoration(
+                              labelText: 'Payment Mode',
+                              border: OutlineInputBorder(),
+                            ),
+                            items: ['cash', 'card', 'upi']
+                                .map((mode) => DropdownMenuItem(
+                                      value: mode,
+                                      child: Text(mode.toUpperCase()),
+                                    ))
+                                .toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedPaymentMode = value!;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -539,21 +642,36 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   }
 
   void _showBillPreview() {
-    // Show retail-style bill preview
-    showDialog(
-      context: context,
-      builder: (context) => RetailBillPreview(
-        order: Order(
-          orderId: DateTime.now().millisecondsSinceEpoch,
-          customerName: selectedCustomer?.name ?? '',
-          customerId: int.parse(selectedCustomer?.id ?? '0'),
-          orderDate: DateTime.now(),
-          startDate: startDate,
-          endDate: endDate,
-          products: productFields,
-          status: OrderStatus.active,
+    if (selectedCustomer == null ||
+        productFields.isEmpty ||
+        startDate == null ||
+        endDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please fill all required fields')),
+      );
+      return;
+    }
+
+    final previewOrder = Order(
+      orderId: DateTime.now().millisecondsSinceEpoch,
+      customerName: selectedCustomer!.name,
+      customerId: int.parse(selectedCustomer!.id),
+      orderDate: DateTime.now(),
+      startDate: startDate,
+      endDate: endDate,
+      products: productFields,
+      status: OrderStatus.active,
+      advanceAmount: double.tryParse(_advanceController.text) ?? 0.0,
+      totalAmount: _calculateTotal(),
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RetailBillPreview(
+          order: previewOrder,
+          rentalDays: endDate!.difference(startDate!).inDays + 1,
         ),
-        rentalDays: _getRentalDays(),
       ),
     );
   }

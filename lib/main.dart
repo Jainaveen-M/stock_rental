@@ -5,12 +5,15 @@ import 'package:stock_rental/product/product.dart';
 import 'package:stock_rental/repo/customer_db_helper.dart';
 import 'package:stock_rental/repo/order_db_helper.dart';
 import 'package:stock_rental/repo/product_db_helper.dart';
+import 'package:stock_rental/repo/payment_db_helper.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:stock_rental/payment/payment_dashboard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await CustomerDatabase().init();
   await OrderDatabase().init();
+  await PaymentDatabase().init();
   runApp(MyApp());
 }
 
@@ -33,6 +36,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<dynamic> _products = [];
   List<dynamic> _customers = [];
   List<dynamic> _orders = [];
+  List<dynamic> _payments = [];
 
   @override
   void initState() {
@@ -48,11 +52,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final products = await productDb.getProducts();
     final customers = await customerDb.getAllCustomers();
     final orders = await orderDb.getAllOrders();
+    final payments = await PaymentDatabase().getAllPayments();
 
     setState(() {
       _products = products;
       _customers = customers;
       _orders = orders;
+      _payments = payments;
     });
   }
 
@@ -120,6 +126,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _buildDrawerItem(Icons.receipt_long, 'Bill', false),
             _buildDrawerItem(Icons.people, 'Customers', false),
             _buildDrawerItem(Icons.business, 'Suppliers', false),
+            _buildDrawerItem(Icons.payment, 'Payments', false),
           ],
         ),
       ),
@@ -134,28 +141,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Text('Dashboard',
                     style:
                         TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                Row(
-                  children: [
-                    DropdownButton(
-                      value: 'Month to date',
-                      items: ['Month to date', 'Year to date']
-                          .map(
-                              (e) => DropdownMenuItem(value: e, child: Text(e)))
-                          .toList(),
-                      onChanged: (value) {},
-                    ),
-                    SizedBox(width: 16),
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.file_download),
-                      label: Text('Export'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green[100],
-                        foregroundColor: Colors.green[900],
-                      ),
-                      onPressed: () {},
-                    ),
-                  ],
-                ),
               ],
             ),
             Row(
@@ -200,6 +185,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       context,
                       MaterialPageRoute(
                           builder: (context) => OrdersDashboard()),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: _buildNavigationCard(
+                    'Payments',
+                    'View payment history',
+                    Icons.payment,
+                    Colors.blue,
+                    '${_payments.length} payments',
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => PaymentDashboard()),
                     ),
                   ),
                 ),

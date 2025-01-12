@@ -4,6 +4,8 @@ import 'package:stock_rental/model/order.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:stock_rental/repo/payment_db_helper.dart';
+import 'package:stock_rental/model/payment.dart';
 
 class RetailBillPreview extends StatelessWidget {
   final Order order;
@@ -169,11 +171,17 @@ class RetailBillPreview extends StatelessWidget {
                     children: [
                       _buildTotalRow('SUBTOTAL', subtotal),
                       _buildTotalRow('TAX 5%', tax),
+                      _buildTotalRow('TOTAL AMOUNT', total),
+                      _buildTotalRow('ADVANCE PAID', order.advanceAmount),
                       SizedBox(height: 8),
                       Container(
                         color: Colors.grey.shade200,
                         padding: EdgeInsets.all(16),
-                        child: _buildTotalRow('AMOUNT DUE', total),
+                        child: _buildTotalRow(
+                          'BALANCE DUE',
+                          total - order.advanceAmount,
+                          isHighlighted: true,
+                        ),
                       ),
                     ],
                   ),
@@ -208,6 +216,42 @@ class RetailBillPreview extends StatelessWidget {
                     ),
                   ],
                 ),
+                FutureBuilder<List<Payment>>(
+                  future: PaymentDatabase().getPaymentsForOrder(order.orderId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return Text('Error loading payment history');
+                    }
+
+                    final payments = snapshot.data ?? [];
+                    if (payments.isEmpty) {
+                      return SizedBox(); // Hide if no payment history
+                    }
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Divider(height: 32),
+                        Text('Payment History',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        ...payments.map((payment) => ListTile(
+                              title: Text(
+                                  '₹${payment.advanceAmount.toStringAsFixed(2)}'),
+                              subtitle: Text(DateFormat('dd/MM/yyyy')
+                                  .format(payment.paymentDate)),
+                              trailing: Text(payment.paymentMode.toUpperCase()),
+                            )),
+                      ],
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -216,7 +260,8 @@ class RetailBillPreview extends StatelessWidget {
     );
   }
 
-  Widget _buildTotalRow(String label, double amount) {
+  Widget _buildTotalRow(String label, double amount,
+      {bool isHighlighted = false}) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -224,8 +269,13 @@ class RetailBillPreview extends StatelessWidget {
         children: [
           SizedBox(width: 120, child: Text(label)),
           SizedBox(width: 24),
-          Text('₹${amount.toStringAsFixed(2)}',
-              style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            '₹${amount.toStringAsFixed(2)}',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isHighlighted ? Colors.red : null,
+            ),
+          ),
         ],
       ),
     );

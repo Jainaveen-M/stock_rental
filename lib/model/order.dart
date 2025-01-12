@@ -13,6 +13,7 @@ class Order {
   final List<ProductField> products;
   OrderStatus status;
   final double? totalAmount;
+  final double advanceAmount;
 
   Order({
     required this.orderId,
@@ -24,6 +25,7 @@ class Order {
     required this.products,
     this.status = OrderStatus.pending,
     this.totalAmount,
+    this.advanceAmount = 0.0,
   });
 
   bool get isActive => status == OrderStatus.active;
@@ -81,6 +83,7 @@ class Order {
         'products': products.map((product) => product.toMap()).toList(),
         'status': status.toString(),
         'totalAmount': totalAmount ?? products.totalAmount,
+        'advanceAmount': advanceAmount,
       };
 
   factory Order.fromMap(Map<String, dynamic> map) {
@@ -100,7 +103,8 @@ class Order {
         (e) => e.toString() == map['status'],
         orElse: () => OrderStatus.pending,
       ),
-      totalAmount: map['totalAmount']?.toDouble(),
+      totalAmount: (map['totalAmount'] ?? 0.0).toDouble(),
+      advanceAmount: (map['advanceAmount'] ?? 0.0).toDouble(),
     );
   }
 
