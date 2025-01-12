@@ -32,12 +32,10 @@ class ProductDatabase {
     await _store.add(db, product);
   }
 
-  Future<List<Map<String, dynamic>>> getProducts() async {
+  Future<List<Product>> getProducts() async {
     final db = await database;
     final records = await _store.find(db);
-    return records
-        .map((snapshot) => snapshot.value as Map<String, dynamic>)
-        .toList();
+    return records.map((record) => Product.fromMap(record.value)).toList();
   }
 
   Future<void> updateProduct(int key, Map<String, dynamic> product) async {

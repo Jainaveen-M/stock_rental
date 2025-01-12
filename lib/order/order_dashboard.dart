@@ -89,7 +89,8 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
   void _createNewOrder() async {
     final customers = await _customerDatabase.getAllCustomers();
     final productMaps = await _productDatabase.getProducts();
-    final products = productMaps.map((map) => Product.fromMap2(map)).toList();
+    final products =
+        productMaps.map((map) => Product.fromMap2(map.toMap())).toList();
 
     if (!mounted) return;
 
@@ -132,6 +133,21 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
       appBar: AppBar(
         title: Text('Orders Management'),
         elevation: 0,
+        actions: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: ElevatedButton.icon(
+              icon: Icon(Icons.add),
+              label: Text('New Order'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 16),
+              ),
+              onPressed: _createNewOrder,
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -191,12 +207,6 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
             child: _buildOrdersTable(),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _createNewOrder,
-        label: Text('New Order'),
-        icon: Icon(Icons.add),
-        backgroundColor: Theme.of(context).primaryColor,
       ),
     );
   }

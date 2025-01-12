@@ -23,7 +23,7 @@ class _ProductScreenState extends State<ProductScreen> {
   Future<void> _loadProducts() async {
     final products = await _db.getProducts();
     setState(() {
-      _products = products.map((map) => Product.fromMap(map)).toList();
+      _products = products.map((map) => Product.fromMap(map.toMap())).toList();
     });
   }
 

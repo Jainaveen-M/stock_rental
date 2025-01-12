@@ -38,9 +38,7 @@ class CustomerDatabase {
   // Get all customers from the database
   Future<List<Customer>> getAllCustomers() async {
     final records = await _customerStore.find(_db);
-    return records.map((snapshot) {
-      return Customer.fromMap(snapshot.value);
-    }).toList();
+    return records.map((record) => Customer.fromMap(record.value)).toList();
   }
 
   Future<Customer?> getCustomer(String id) async {

@@ -8,6 +8,11 @@ import 'package:stock_rental/repo/product_db_helper.dart';
 import 'package:stock_rental/repo/payment_db_helper.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:stock_rental/payment/payment_dashboard.dart';
+import 'package:stock_rental/order/create_order_screen.dart';
+import 'package:stock_rental/model/product.dart';
+import 'package:stock_rental/model/customer.dart';
+import 'package:stock_rental/model/order.dart';
+import 'package:stock_rental/model/payment.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,10 +38,10 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  List<dynamic> _products = [];
-  List<dynamic> _customers = [];
-  List<dynamic> _orders = [];
-  List<dynamic> _payments = [];
+  List<Product> _products = [];
+  List<Customer> _customers = [];
+  List<Order> _orders = [];
+  List<Payment> _payments = [];
 
   @override
   void initState() {
@@ -74,6 +79,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: Icon(Icons.add_circle_outline),
+            tooltip: 'New Order',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CreateOrderScreen(
+                  customers: _customers,
+                  availableProducts: _products,
+                  onCreate: (order) {
+                    _loadData();
+                    Navigator.pop(context);
+                  },
+                  productDatabase: ProductDatabase(),
+                ),
+              ),
+            ),
+          ),
           IconButton(icon: Icon(Icons.notifications), onPressed: () {}),
           CircleAvatar(
             backgroundImage: AssetImage('assets/profile.png'),
@@ -147,6 +170,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 Expanded(
                   child: _buildNavigationCard(
+                    'New Order',
+                    'Create new rental order',
+                    Icons.add_shopping_cart,
+                    Colors.purple,
+                    'Create Order',
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CreateOrderScreen(
+                          customers: _customers,
+                          availableProducts: _products,
+                          onCreate: (order) {
+                            _loadData();
+                            Navigator.pop(context);
+                          },
+                          productDatabase: ProductDatabase(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: _buildNavigationCard(
+                    'Payments',
+                    'View payment history',
+                    Icons.payment,
+                    Colors.blue,
+                    '${_payments.length} payments',
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => PaymentDashboard()),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildNavigationCard(
                     'Products',
                     'Manage your inventory',
                     Icons.inventory_2,
@@ -189,20 +254,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 SizedBox(width: 16),
-                Expanded(
-                  child: _buildNavigationCard(
-                    'Payments',
-                    'View payment history',
-                    Icons.payment,
-                    Colors.blue,
-                    '${_payments.length} payments',
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => PaymentDashboard()),
-                    ),
-                  ),
-                ),
               ],
             ),
             SizedBox(height: 24),
