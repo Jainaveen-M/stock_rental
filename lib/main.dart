@@ -206,80 +206,80 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildOverviewCard(
-                    'Sales Overview',
-                    [
-                      _buildMetric('Total Sales', '786', Icons.shopping_cart,
-                          Colors.blue[100]!),
-                      _buildMetric('Revenue', '17584', Icons.attach_money,
-                          Colors.orange[100]!),
-                      _buildMetric('Cost', '12487', Icons.trending_down,
-                          Colors.red[100]!),
-                      _buildMetric('Profit', '5097', Icons.trending_up,
-                          Colors.green[100]!),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: _buildOverviewCard(
-                    'Purchase Overview',
-                    [
-                      _buildMetric('No of Purchase', '45', Icons.shopping_bag,
-                          Colors.purple[100]!),
-                      _buildMetric(
-                          'Cancel Order', '04', Icons.cancel, Colors.red[100]!),
-                      _buildMetric('Cost', '786', Icons.trending_down,
-                          Colors.orange[100]!),
-                      _buildMetric('Returns', '07', Icons.assignment_return,
-                          Colors.blue[100]!),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            // Row(
+            //   children: [
+            //     Expanded(
+            //       child: _buildOverviewCard(
+            //         'Sales Overview',
+            //         [
+            //           _buildMetric('Total Sales', '786', Icons.shopping_cart,
+            //               Colors.blue[100]!),
+            //           _buildMetric('Revenue', '17584', Icons.attach_money,
+            //               Colors.orange[100]!),
+            //           _buildMetric('Cost', '12487', Icons.trending_down,
+            //               Colors.red[100]!),
+            //           _buildMetric('Profit', '5097', Icons.trending_up,
+            //               Colors.green[100]!),
+            //         ],
+            //       ),
+            //     ),
+            //     SizedBox(width: 16),
+            //     Expanded(
+            //       child: _buildOverviewCard(
+            //         'Purchase Overview',
+            //         [
+            //           _buildMetric('No of Purchase', '45', Icons.shopping_bag,
+            //               Colors.purple[100]!),
+            //           _buildMetric(
+            //               'Cancel Order', '04', Icons.cancel, Colors.red[100]!),
+            //           _buildMetric('Cost', '786', Icons.trending_down,
+            //               Colors.orange[100]!),
+            //           _buildMetric('Returns', '07', Icons.assignment_return,
+            //               Colors.blue[100]!),
+            //         ],
+            //       ),
+            //     ),
+            //   ],
+            // ),
             SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildSummaryCard(
-                    'Inventory Summary',
-                    [
-                      _buildSummaryItem('Quantity in Hand', '214',
-                          Icons.inventory_2, Colors.green),
-                      _buildSummaryItem('Will be Received', '44',
-                          Icons.local_shipping, Colors.orange),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: _buildDetailsCard(
-                    'Product Details',
-                    [
-                      _buildDetailRow('Low Stock Items', '02'),
-                      _buildDetailRow('Item Group', '14'),
-                      _buildDetailRow('No of Items', '104'),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: _buildSummaryCard(
-                    'No. of Users',
-                    [
-                      _buildSummaryItem(
-                          'Total Customers', '1.8k', Icons.people, Colors.blue),
-                      _buildSummaryItem('Total Suppliers', '27', Icons.business,
-                          Colors.purple),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            // Row(
+            //   children: [
+            //     Expanded(
+            //       child: _buildSummaryCard(
+            //         'Inventory Summary',
+            //         [
+            //           _buildSummaryItem('Quantity in Hand', '214',
+            //               Icons.inventory_2, Colors.green),
+            //           _buildSummaryItem('Will be Received', '44',
+            //               Icons.local_shipping, Colors.orange),
+            //         ],
+            //       ),
+            //     ),
+            //     SizedBox(width: 16),
+            //     Expanded(
+            //       child: _buildDetailsCard(
+            //         'Product Details',
+            //         [
+            //           _buildDetailRow('Low Stock Items', '02'),
+            //           _buildDetailRow('Item Group', '14'),
+            //           _buildDetailRow('No of Items', '104'),
+            //         ],
+            //       ),
+            //     ),
+            //     SizedBox(width: 16),
+            //     Expanded(
+            //       child: _buildSummaryCard(
+            //         'No. of Users',
+            //         [
+            //           _buildSummaryItem(
+            //               'Total Customers', '1.8k', Icons.people, Colors.blue),
+            //           _buildSummaryItem('Total Suppliers', '27', Icons.business,
+            //               Colors.purple),
+            //         ],
+            //       ),
+            //     ),
+            //   ],
+            // ),
             SizedBox(height: 24),
             SizedBox(height: 24),
             _buildChart(),

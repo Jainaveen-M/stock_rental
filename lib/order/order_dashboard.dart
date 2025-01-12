@@ -38,6 +38,9 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
   final DateFormat dateFormat = DateFormat('yyyy-MM-dd');
   List<Order> orders = [];
   String filterStatus = 'All';
+  int _rowsPerPage = 10;
+  int _currentPage = 0;
+  List<Order> _paginatedOrders = [];
 
   @override
   void initState() {
@@ -55,6 +58,20 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
     final allOrders = await _orderDatabase.getAllOrders();
     setState(() {
       orders = allOrders;
+      _updatePaginatedOrders();
+    });
+  }
+
+  void _updatePaginatedOrders() {
+    final filteredOrders = _getFilteredOrders();
+    final startIndex = _currentPage * _rowsPerPage;
+    final endIndex = startIndex + _rowsPerPage;
+
+    setState(() {
+      _paginatedOrders = filteredOrders.sublist(
+        startIndex,
+        endIndex > filteredOrders.length ? filteredOrders.length : endIndex,
+      );
     });
   }
 
@@ -276,64 +293,138 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
       DateTime.now().day,
     );
 
+    final filteredOrders = _getFilteredOrders();
+    final totalRows = filteredOrders.length;
+    final totalPages = (totalRows / _rowsPerPage).ceil();
+
     return Card(
       margin: EdgeInsets.all(16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),
       elevation: 4,
-      child: DataTable2(
-        columnSpacing: 12,
-        horizontalMargin: 12,
-        columns: [
-          DataColumn2(label: Text('Order ID'), size: ColumnSize.S),
-          DataColumn2(label: Text('Customer'), size: ColumnSize.M),
-          DataColumn2(label: Text('Start Date'), size: ColumnSize.M),
-          DataColumn2(label: Text('End Date'), size: ColumnSize.M),
-          DataColumn2(label: Text('Status'), size: ColumnSize.S),
-          DataColumn2(label: Text('Actions'), size: ColumnSize.L),
+      child: Column(
+        children: [
+          Expanded(
+            child: DataTable2(
+              columnSpacing: 12,
+              horizontalMargin: 12,
+              columns: [
+                DataColumn2(label: Text('Order ID'), size: ColumnSize.S),
+                DataColumn2(label: Text('Customer'), size: ColumnSize.M),
+                DataColumn2(label: Text('Start Date'), size: ColumnSize.M),
+                DataColumn2(label: Text('End Date'), size: ColumnSize.M),
+                DataColumn2(label: Text('Status'), size: ColumnSize.S),
+                DataColumn2(label: Text('Actions'), size: ColumnSize.L),
+              ],
+              rows: _paginatedOrders.map((order) {
+                bool isExpired = order.endDate != null &&
+                    order.endDate!.isBefore(DateTime.now()) &&
+                    order.status != OrderStatus.closed;
+
+                bool endsToday = order.endDate != null &&
+                    DateTime(
+                      order.endDate!.year,
+                      order.endDate!.month,
+                      order.endDate!.day,
+                    ).isAtSameMomentAs(today);
+
+                return DataRow2(
+                  color: MaterialStateProperty.resolveWith<Color?>((states) {
+                    if (isExpired) return Colors.red.shade50;
+                    if (endsToday) return Colors.orange.shade50;
+                    return null;
+                  }),
+                  cells: [
+                    DataCell(Text(
+                      '#${order.orderId.toString()}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: endsToday ? Colors.orange.shade900 : null,
+                      ),
+                    )),
+                    DataCell(Text(order.customerName)),
+                    DataCell(Text(
+                        dateFormat.format(order.startDate ?? order.orderDate))),
+                    DataCell(Text(
+                      order.endDate != null
+                          ? dateFormat.format(order.endDate!)
+                          : 'Not set',
+                      style: TextStyle(
+                        color: endsToday ? Colors.orange.shade900 : null,
+                        fontWeight: endsToday ? FontWeight.bold : null,
+                      ),
+                    )),
+                    DataCell(_buildStatusChip(order.status.name)),
+                    DataCell(_buildActionButtons(order)),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: Colors.grey.shade300)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Text('Rows per page: '),
+                    DropdownButton<int>(
+                      value: _rowsPerPage,
+                      items: [10, 20, 50, 100].map((value) {
+                        return DropdownMenuItem<int>(
+                          value: value,
+                          child: Text('$value'),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _rowsPerPage = value!;
+                          _currentPage = 0;
+                          _updatePaginatedOrders();
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Text(
+                      '${_currentPage * _rowsPerPage + 1}-${(_currentPage + 1) * _rowsPerPage > totalRows ? totalRows : (_currentPage + 1) * _rowsPerPage} of $totalRows',
+                    ),
+                    SizedBox(width: 16),
+                    IconButton(
+                      icon: Icon(Icons.chevron_left),
+                      onPressed: _currentPage > 0
+                          ? () {
+                              setState(() {
+                                _currentPage--;
+                                _updatePaginatedOrders();
+                              });
+                            }
+                          : null,
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.chevron_right),
+                      onPressed: (_currentPage + 1) < totalPages
+                          ? () {
+                              setState(() {
+                                _currentPage++;
+                                _updatePaginatedOrders();
+                              });
+                            }
+                          : null,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
-        rows: _getFilteredOrders().map((order) {
-          bool isExpired = order.endDate != null &&
-              order.endDate!.isBefore(DateTime.now()) &&
-              order.status != OrderStatus.closed;
-
-          bool endsToday = order.endDate != null &&
-              DateTime(order.endDate!.year, order.endDate!.month,
-                      order.endDate!.day)
-                  .isAtSameMomentAs(today);
-
-          return DataRow2(
-            color: MaterialStateProperty.resolveWith<Color?>((states) {
-              if (isExpired) return Colors.red.shade50;
-              if (endsToday) return Colors.orange.shade50;
-              return null;
-            }),
-            cells: [
-              DataCell(Text(
-                '#${order.orderId.toString()}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: endsToday ? Colors.orange.shade900 : null,
-                ),
-              )),
-              DataCell(Text(order.customerName)),
-              DataCell(
-                  Text(dateFormat.format(order.startDate ?? order.orderDate))),
-              DataCell(Text(
-                order.endDate != null
-                    ? dateFormat.format(order.endDate!)
-                    : 'Not set',
-                style: TextStyle(
-                  color: endsToday ? Colors.orange.shade900 : null,
-                  fontWeight: endsToday ? FontWeight.bold : null,
-                ),
-              )),
-              DataCell(_buildStatusChip(order.status.name)),
-              DataCell(_buildActionButtons(order)),
-            ],
-          );
-        }).toList(),
       ),
     );
   }

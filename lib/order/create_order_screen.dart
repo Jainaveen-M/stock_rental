@@ -265,9 +265,52 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         actions: [
           TextButton.icon(
             icon: Icon(Icons.preview),
-            label: Text('Preview Bill'),
+            label: Text('Preview'),
             onPressed: _showBillPreview,
           ),
+          TextButton.icon(
+            icon: Icon(Icons.save),
+            label: Text('Save Order'),
+            onPressed: () {
+              if (selectedCustomer == null ||
+                  productFields.isEmpty ||
+                  startDate == null ||
+                  endDate == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Please fill all required fields'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('Confirm Order'),
+                  content: Text('Are you sure you want to save this order?'),
+                  actions: [
+                    TextButton(
+                      child: Text('Cancel'),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    ElevatedButton(
+                      child: Text('Save'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _saveOrder();
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          SizedBox(width: 16),
         ],
       ),
       body: Form(
