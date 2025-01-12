@@ -62,7 +62,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
   void _loadOrders() async {
     final allOrders = await _orderDatabase.getAllOrders();
     setState(() {
-      orders = allOrders;
+      orders = allOrders..sort((a, b) => b.orderDate.compareTo(a.orderDate));
       _updatePaginatedOrders();
     });
   }
@@ -495,6 +495,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                 DataColumn2(label: Text('End Date'), size: ColumnSize.M),
                 DataColumn2(label: Text('Total Value'), size: ColumnSize.S),
                 DataColumn2(label: Text('Status'), size: ColumnSize.S),
+                DataColumn2(label: Text('Invoice'), size: ColumnSize.S),
                 DataColumn2(label: Text('Actions'), size: ColumnSize.L),
               ],
               rows: _paginatedOrders.map((order) {
@@ -538,6 +539,13 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                     DataCell(Text(
                         '₹${_calculateOrderTotal(order).toStringAsFixed(2)}')),
                     DataCell(_buildStatusChip(order.status.name)),
+                    DataCell(
+                      IconButton(
+                        icon: Icon(Icons.receipt,
+                            color: Theme.of(context).primaryColor),
+                        onPressed: () => _showInvoice(order),
+                      ),
+                    ),
                     DataCell(_buildActionButtons(order)),
                   ],
                 );
@@ -797,6 +805,21 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
       0.0,
       (sum, product) =>
           sum + (product.quantity * (product.price ?? 0) * rentalDays),
+    );
+  }
+
+  void _showInvoice(Order order) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RetailBillPreview(
+          order: order,
+          rentalDays: order.endDate!.difference(order.startDate!).inDays + 1,
+          advanceAmount: order.advanceAmount ?? 0.0,
+          balanceAmount:
+              (order.totalAmount ?? 0.0) - (order.advanceAmount ?? 0.0),
+        ),
+      ),
     );
   }
 }

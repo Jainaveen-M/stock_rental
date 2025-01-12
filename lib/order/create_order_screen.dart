@@ -185,11 +185,20 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   }
 
   double _calculateTotal() {
+    if (startDate == null || endDate == null) return 0.0;
+
+    int rentalDays = endDate!.difference(startDate!).inDays + 1;
     return productFields.fold<double>(
       0.0,
       (sum, product) =>
-          sum + (product.quantity * (product.price ?? 0) * _getRentalDays()),
+          sum + (product.quantity * (product.price ?? 0) * rentalDays),
     );
+  }
+
+  double _calculateBalance() {
+    double total = _calculateTotal();
+    double advance = double.tryParse(_advanceController.text) ?? 0.0;
+    return total - advance;
   }
 
   void _saveOrder() async {
@@ -501,22 +510,36 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                               ),
                               SizedBox(width: 16),
                               Expanded(
-                                child: TextField(
+                                child: TextFormField(
                                   controller: _advanceController,
                                   decoration: InputDecoration(
                                     labelText: 'Advance Amount',
                                     prefixText: '₹',
                                     border: OutlineInputBorder(),
                                   ),
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (value) => setState(() {}),
+                                  keyboardType: TextInputType.numberWithOptions(
+                                      decimal: true),
+                                  onChanged: (value) {
+                                    setState(
+                                        () {}); // Trigger rebuild to update balance
+                                  },
+                                  validator: (value) {
+                                    if (value != null && value.isNotEmpty) {
+                                      double? advance = double.tryParse(value);
+                                      if (advance != null &&
+                                          advance > _calculateTotal()) {
+                                        return 'Advance cannot exceed total';
+                                      }
+                                    }
+                                    return null;
+                                  },
                                 ),
                               ),
                             ],
                           ),
                           SizedBox(height: 8),
                           Text(
-                            'Balance: ₹${(_calculateTotal() - (double.tryParse(_advanceController.text) ?? 0)).toStringAsFixed(2)}',
+                            'Balance: ₹${_calculateBalance().toStringAsFixed(2)}',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -563,7 +586,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   }
 
   Widget _buildProductRow(ProductField field) {
-    double total = (field.price ?? 0) * field.quantity * _getRentalDays();
+    int rentalDays = _getRentalDays();
+    double total = (field.price ?? 0) * field.quantity * rentalDays;
 
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -621,7 +645,22 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           SizedBox(width: 8),
           Expanded(
             flex: 2,
-            child: Text('₹${(field.price ?? 0).toStringAsFixed(2)}'),
+            child: TextFormField(
+              initialValue: (field.price ?? 0).toStringAsFixed(2),
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                isDense: true,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                border: OutlineInputBorder(),
+                prefixText: '₹',
+              ),
+              onChanged: (value) {
+                setState(() {
+                  field.price = double.tryParse(value) ?? 0.0;
+                });
+              },
+            ),
           ),
           Expanded(
             flex: 2,
