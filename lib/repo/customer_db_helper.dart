@@ -61,4 +61,17 @@ class CustomerDatabase {
       ),
     );
   }
+
+  Future<void> updateCustomer(Customer customer) async {
+    await _customerStore.record(int.parse(customer.id)).update(
+          _db,
+          customer.toMap(),
+        );
+  }
+
+  Future<void> saveCustomer(Customer customer) async {
+    await _customerStore
+        .record(int.parse(customer.id))
+        .put(_db, customer.toMap());
+  }
 }

@@ -24,4 +24,18 @@ class Customer {
         phoneNumber: map['phoneNumber'] ?? '',
         address: map['address'] ?? '',
       );
+
+  Customer copyWith({
+    String? id,
+    String? name,
+    String? phoneNumber,
+    String? address,
+  }) {
+    return Customer(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      address: address ?? this.address,
+    );
+  }
 }
