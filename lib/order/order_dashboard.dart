@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:data_table_2/data_table_2.dart';
@@ -11,6 +13,9 @@ import 'package:stock_rental/repo/product_db_helper.dart';
 import 'package:uuid/uuid.dart';
 import 'package:stock_rental/order/create_order_screen.dart';
 import 'package:stock_rental/order/retail_bill_preview.dart';
+import 'dart:io';
+import 'package:excel/excel.dart';
+import 'package:path_provider/path_provider.dart';
 
 extension OrderStatusExtension on OrderStatus {
   String get name {
@@ -112,6 +117,146 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
     );
   }
 
+  Future<void> _exportOrdersToExcel(String duration) async {
+    try {
+      List<Order> filteredOrders = _filterOrdersByDuration(duration);
+      log("Filtered Orders Count: ${filteredOrders.length}");
+
+      var excel = Excel.createExcel();
+      Sheet sheet = excel['Orders'];
+
+      // Add headers
+      sheet.appendRow([
+        'Order ID',
+        'Customer Name',
+        'Start Date',
+        'End Date',
+        'Total Amount',
+        'Advance Amount',
+        'Balance Amount',
+        'Status',
+        'Products' // Add products column
+      ]);
+
+      // Add data
+      for (var order in filteredOrders) {
+        final total = _calculateOrderTotal(order);
+        final products = order.products
+            .map((p) => "${p.productName} (${p.quantity}x)")
+            .join(", ");
+
+        sheet.appendRow([
+          order.orderId.toString(),
+          order.customerName,
+          order.startDate != null ? dateFormat.format(order.startDate!) : '',
+          order.endDate != null ? dateFormat.format(order.endDate!) : '',
+          total.toStringAsFixed(2),
+          (order.advanceAmount ?? 0.0).toStringAsFixed(2),
+          (total - (order.advanceAmount ?? 0.0)).toStringAsFixed(2),
+          order.status.name,
+          products
+        ]);
+      }
+
+      // Save file
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath =
+          '${directory.path}/orders_${duration.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+      log("Writing to file: $filePath");
+      final file = File(filePath);
+
+      final bytes = excel.encode();
+      if (bytes != null) {
+        await file.writeAsBytes(bytes);
+        log("File written successfully");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Report saved to: $filePath'),
+            duration: Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'OK',
+              onPressed: () {},
+            ),
+          ),
+        );
+      } else {
+        throw Exception('Failed to encode Excel file');
+      }
+    } catch (e, stackTrace) {
+      log("Error exporting to Excel: $e");
+      log("Stack trace: $stackTrace");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to export report: ${e.toString()}')),
+      );
+    }
+  }
+
+  List<Order> _filterOrdersByDuration(String duration) {
+    DateTime now = DateTime.now();
+    DateTime startDate;
+
+    switch (duration) {
+      case 'Last 1 Month':
+        startDate = DateTime(now.year, now.month - 1, now.day);
+        break;
+      case 'Last 3 Months':
+        startDate = DateTime(now.year, now.month - 3, now.day);
+        break;
+      case 'Last Financial Year':
+        // Indian Financial Year starts from April
+        int year = now.month < 4 ? now.year - 1 : now.year;
+        startDate = DateTime(year, 4, 1);
+        break;
+      default:
+        startDate = DateTime(now.year - 1, now.month, now.day);
+    }
+
+    log("Filtering orders from: ${startDate.toString()}");
+    final filtered = orders
+        .where((order) =>
+            order.orderDate.isAfter(startDate) ||
+            order.orderDate.isAtSameMomentAs(startDate))
+        .toList();
+    log("Found ${filtered.length} orders in period");
+
+    return filtered;
+  }
+
+  void _showExportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Export Orders'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text('Last 1 Month'),
+              onTap: () {
+                Navigator.pop(context);
+                _exportOrdersToExcel('Last 1 Month');
+              },
+            ),
+            ListTile(
+              title: Text('Last 3 Months'),
+              onTap: () {
+                Navigator.pop(context);
+                _exportOrdersToExcel('Last 3 Months');
+              },
+            ),
+            ListTile(
+              title: Text('Last Financial Year'),
+              onTap: () {
+                Navigator.pop(context);
+                _exportOrdersToExcel('Last Financial Year');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final today = DateTime(
@@ -136,6 +281,11 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
         title: Text('Orders Management'),
         elevation: 0,
         actions: [
+          IconButton(
+            icon: Icon(Icons.file_download),
+            tooltip: 'Export Report',
+            onPressed: _showExportDialog,
+          ),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: ElevatedButton.icon(
@@ -148,6 +298,18 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
               ),
               onPressed: _createNewOrder,
             ),
+          ),
+          PopupMenuButton<String>(
+            onSelected: _exportOrdersToExcel,
+            itemBuilder: (BuildContext context) {
+              return {'Last 1 Month', 'Last 3 Months', 'Last Financial Year'}
+                  .map((String choice) {
+                return PopupMenuItem<String>(
+                  value: choice,
+                  child: Text(choice),
+                );
+              }).toList();
+            },
           ),
         ],
       ),
@@ -384,9 +546,11 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
           ),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: Colors.grey.shade300)),
-            ),
+            // decoration: BoxDecoration(
+            //   border: Border(
+            //     top: BorderSide(color: Colors.grey.shade300),
+            //   ),
+            // ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
