@@ -188,6 +188,9 @@ class _PaymentDashboardState extends State<PaymentDashboard> {
   void _showInvoicePreview(Order? order, Payment payment) {
     if (order == null) return;
 
+    final totalAmount = order.totalAmount ?? 0.0;
+    final advanceAmount = order.advanceAmount ?? 0.0;
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -196,6 +199,8 @@ class _PaymentDashboardState extends State<PaymentDashboard> {
           rentalDays: order.endDate != null && order.startDate != null
               ? order.endDate!.difference(order.startDate!).inDays + 1
               : 1,
+          advanceAmount: advanceAmount,
+          balanceAmount: totalAmount - advanceAmount,
         ),
       ),
     );

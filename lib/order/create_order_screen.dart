@@ -671,6 +671,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         builder: (context) => RetailBillPreview(
           order: previewOrder,
           rentalDays: endDate!.difference(startDate!).inDays + 1,
+          advanceAmount: double.tryParse(_advanceController.text) ?? 0.0,
+          balanceAmount: _calculateTotal() -
+              (double.tryParse(_advanceController.text) ?? 0.0),
         ),
       ),
     );

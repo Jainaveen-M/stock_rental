@@ -81,8 +81,10 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
       bool matchesSearch = order.orderId.toString().contains(query) ||
           order.customerName.toLowerCase().contains(query);
 
-      if (filterStatus == 'All') return matchesSearch;
-      return matchesSearch && order.status.name == filterStatus;
+      bool matchesStatus = filterStatus == 'All' ||
+          order.status.name.toLowerCase() == filterStatus.toLowerCase();
+
+      return matchesSearch && matchesStatus;
     }).toList();
   }
 
@@ -224,7 +226,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => _updatePaginatedOrders(),
             ),
           ),
           SizedBox(width: 16),
@@ -236,7 +238,12 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                 child: Text(status),
               );
             }).toList(),
-            onChanged: (value) => setState(() => filterStatus = value!),
+            onChanged: (value) {
+              setState(() {
+                filterStatus = value!;
+                _updatePaginatedOrders();
+              });
+            },
           ),
         ],
       ),
@@ -324,6 +331,7 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                 DataColumn2(label: Text('Customer'), size: ColumnSize.M),
                 DataColumn2(label: Text('Start Date'), size: ColumnSize.M),
                 DataColumn2(label: Text('End Date'), size: ColumnSize.M),
+                DataColumn2(label: Text('Total Value'), size: ColumnSize.S),
                 DataColumn2(label: Text('Status'), size: ColumnSize.S),
                 DataColumn2(label: Text('Actions'), size: ColumnSize.L),
               ],
@@ -365,6 +373,8 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
                         fontWeight: endsToday ? FontWeight.bold : null,
                       ),
                     )),
+                    DataCell(Text(
+                        '₹${_calculateOrderTotal(order).toStringAsFixed(2)}')),
                     DataCell(_buildStatusChip(order.status.name)),
                     DataCell(_buildActionButtons(order)),
                   ],
@@ -502,6 +512,9 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
           rentalDays: order.endDate != null && order.startDate != null
               ? order.endDate!.difference(order.startDate!).inDays + 1
               : 1,
+          advanceAmount: order.advanceAmount ?? 0.0,
+          balanceAmount:
+              (order.totalAmount ?? 0.0) - (order.advanceAmount ?? 0.0),
         ),
       ),
     );
@@ -609,6 +622,18 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
         builder: (context) => CustomerDetailsDialog(customer: customer),
       );
     }
+  }
+
+  double _calculateOrderTotal(Order order) {
+    final rentalDays = order.endDate != null && order.startDate != null
+        ? order.endDate!.difference(order.startDate!).inDays + 1
+        : 1;
+
+    return order.products.fold<double>(
+      0.0,
+      (sum, product) =>
+          sum + (product.quantity * (product.price ?? 0) * rentalDays),
+    );
   }
 }
 
