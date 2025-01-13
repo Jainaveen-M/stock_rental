@@ -73,9 +73,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            Icon(Icons.inventory, color: Colors.green),
+            Icon(Icons.business, color: Colors.blue),
             SizedBox(width: 8),
-            Text('INVENTORY'),
+            Text('Sri Sai Enterprises'),
           ],
         ),
         actions: [
@@ -98,23 +98,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           IconButton(icon: Icon(Icons.notifications), onPressed: () {}),
-          CircleAvatar(
-            backgroundImage: AssetImage('assets/profile.png'),
-            radius: 15,
-          ),
-          PopupMenuButton(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Text('Hachib'),
-                  Icon(Icons.arrow_drop_down),
-                ],
-              ),
-            ),
-            itemBuilder: (context) => [],
-          ),
-          IconButton(icon: Icon(Icons.settings), onPressed: () {}),
+          IconButton(
+              icon: Icon(Icons.person_outlined),
+              onPressed: () {}), // PopupMenuButton(
+          //   child: Padding(
+          //     padding: EdgeInsets.symmetric(horizontal: 16),
+          //     child: Row(
+          //       children: [
+          //         Text('Hachib'),
+          //         Icon(Icons.arrow_drop_down),
+          //       ],
+          //     ),
+          //   ),
+          //   itemBuilder: (context) => [],
+          // ),
+          // IconButton(icon: Icon(Icons.settings), onPressed: () {}),
         ],
       ),
       drawer: Drawer(
@@ -129,27 +127,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.inventory, color: Colors.green),
+                      Icon(Icons.business, color: Colors.blue),
                       SizedBox(width: 8),
-                      Text('INVENTORY',
-                          style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text('Sri Sai Enterprises'),
                     ],
                   ),
                 ],
               ),
             ),
-            _buildDrawerItem(Icons.dashboard, 'Dashboard', true),
-            _buildDrawerItem(Icons.inventory_2, 'Inventory', false),
-            _buildDrawerItem(Icons.shopping_cart, 'Purchase', false),
-            _buildDrawerItem(
-                Icons.assignment_return, 'Suppliers Return', false),
-            _buildDrawerItem(Icons.receipt, 'Invoice', false),
-            _buildDrawerItem(Icons.point_of_sale, 'Sales', false),
-            _buildDrawerItem(Icons.receipt_long, 'Bill', false),
-            _buildDrawerItem(Icons.people, 'Customers', false),
-            _buildDrawerItem(Icons.business, 'Suppliers', false),
-            _buildDrawerItem(Icons.payment, 'Payments', false),
+            _buildDrawerItem(Icons.people, 'Profile', true),
+            // _buildDrawerItem(Icons.dashboard, 'Dashboard', true),
+            // _buildDrawerItem(Icons.inventory_2, 'Inventory', false),
+            // _buildDrawerItem(Icons.shopping_cart, 'Purchase', false),
+            // _buildDrawerItem(
+            //     Icons.assignment_return, 'Suppliers Return', false),
+            // _buildDrawerItem(Icons.receipt, 'Invoice', false),
+            // _buildDrawerItem(Icons.point_of_sale, 'Sales', false),
+            // _buildDrawerItem(Icons.receipt_long, 'Bill', false),
+            // _buildDrawerItem(Icons.people, 'Customers', false),
+            // _buildDrawerItem(Icons.business, 'Suppliers', false),
+            // _buildDrawerItem(Icons.payment, 'Payments', false),
           ],
         ),
       ),
