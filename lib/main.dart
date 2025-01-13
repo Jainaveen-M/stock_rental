@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stock_rental/config/app_theme.dart';
 import 'package:stock_rental/customer/customer_dashboard.dart';
 import 'package:stock_rental/order/order_dashboard.dart';
 import 'package:stock_rental/product/product.dart';
@@ -203,10 +204,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 ),
-              ],
-            ),
-            Row(
-              children: [
                 Expanded(
                   child: _buildNavigationCard(
                     'Products',
@@ -525,7 +522,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       color: color.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(icon, color: color, size: 24),
+                    child:
+                        Icon(icon, color: color, size: AppTheme.iconSizeSmall),
                   ),
                   SizedBox(width: 12),
                   Expanded(
@@ -535,7 +533,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Text(
                           title,
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: AppTheme.fontSizeSmall,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -543,7 +541,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           subtitle,
                           style: TextStyle(
                             color: Colors.grey[600],
-                            fontSize: 14,
+                            fontSize: AppTheme.fontSizeSmall,
                           ),
                         ),
                       ],
@@ -558,8 +556,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Text(
                     count,
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontSize: AppTheme.fontSizeSmall,
                       color: color,
                     ),
                   ),

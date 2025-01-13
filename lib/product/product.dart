@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:data_table_2/data_table_2.dart';
+import 'package:stock_rental/config/app_theme.dart';
 import 'package:stock_rental/model/product.dart';
 import 'package:stock_rental/repo/product_db_helper.dart';
 
@@ -54,13 +55,13 @@ class _ProductScreenState extends State<ProductScreen> {
                   Icon(
                     product == null ? Icons.add_box : Icons.edit,
                     color: Theme.of(context).primaryColor,
-                    size: 28,
+                    size: 20,
                   ),
                   SizedBox(width: 12),
                   Text(
                     product == null ? 'Add New Product' : 'Edit Product',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: AppTheme.fontSizeRegular,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).primaryColor,
                     ),
@@ -179,18 +180,27 @@ class _ProductScreenState extends State<ProductScreen> {
     bool isNumber = false,
     int maxLines = 1,
   }) {
-    return TextField(
-      controller: controller,
-      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+    return SizedBox(
+      height: 45,
+      child: TextField(
+        controller: controller,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(
+            icon,
+            size: 18,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          filled: true,
+          fillColor: Colors.grey[50],
+          labelStyle: TextStyle(
+            fontSize: AppTheme.fontSizeRegular,
+          ),
         ),
-        filled: true,
-        fillColor: Colors.grey[50],
       ),
     );
   }
@@ -220,7 +230,8 @@ class _ProductScreenState extends State<ProductScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Inventory Management'),
+        title: Text('Inventory Management',
+            style: TextStyle(fontSize: AppTheme.fontSizeMedium)),
         elevation: 0,
       ),
       body: Column(
@@ -231,18 +242,23 @@ class _ProductScreenState extends State<ProductScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search products...',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  child: SizedBox(
+                    height: 40,
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search products...',
+                        hintStyle:
+                            TextStyle(fontSize: AppTheme.fontSizeRegular),
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
                       ),
-                      filled: true,
-                      fillColor: Colors.white,
+                      onChanged: (value) => setState(() {}),
                     ),
-                    onChanged: (value) => setState(() {}),
                   ),
                 ),
                 SizedBox(width: 16),
@@ -262,45 +278,73 @@ class _ProductScreenState extends State<ProductScreen> {
           ),
           Expanded(
             child: Card(
-              margin: EdgeInsets.all(16),
+              margin: EdgeInsets.all(10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
               elevation: 4,
               child: DataTable2(
                 columnSpacing: 12,
-                horizontalMargin: 12,
+                horizontalMargin: 10,
                 columns: [
                   DataColumn2(label: Text('ID'), size: ColumnSize.S),
-                  DataColumn2(label: Text('Name'), size: ColumnSize.L),
-                  DataColumn2(label: Text('Category'), size: ColumnSize.M),
+                  DataColumn2(label: Text('Name'), size: ColumnSize.S),
+                  DataColumn2(label: Text('Category'), size: ColumnSize.S),
                   DataColumn2(label: Text('Price/Day'), size: ColumnSize.S),
                   DataColumn2(label: Text('Stock'), size: ColumnSize.S),
                   DataColumn2(label: Text('Available'), size: ColumnSize.S),
                   DataColumn2(label: Text('Rented'), size: ColumnSize.S),
-                  DataColumn2(label: Text('Actions'), size: ColumnSize.M),
+                  DataColumn2(label: Text('Actions'), size: ColumnSize.S),
                 ],
                 rows: _products.map((product) {
                   return DataRow2(
                     cells: [
-                      DataCell(Text('#${product.id}')),
-                      DataCell(Text(product.name)),
-                      DataCell(Text(product.category)),
-                      DataCell(Text('₹${product.price.toStringAsFixed(2)}')),
-                      DataCell(Text('${product.stock}')),
-                      DataCell(
-                          Text('${product.stock - (product.rented ?? 0)}')),
-                      DataCell(Text('${product.rented ?? 0}')),
+                      DataCell(Text(
+                        '#${product.id}',
+                        style: TextStyle(fontSize: AppTheme.fontSizeSmall),
+                      )),
+                      DataCell(Text(
+                        product.name,
+                        style: TextStyle(fontSize: AppTheme.fontSizeSmall),
+                      )),
+                      DataCell(Text(
+                        product.category,
+                        style: TextStyle(fontSize: AppTheme.fontSizeSmall),
+                      )),
+                      DataCell(Text(
+                        '₹${product.price.toStringAsFixed(2)}',
+                        style: TextStyle(fontSize: AppTheme.fontSizeSmall),
+                      )),
+                      DataCell(Text(
+                        '${product.stock}',
+                        style: TextStyle(fontSize: AppTheme.fontSizeSmall),
+                      )),
+                      DataCell(Text(
+                        '${product.stock - (product.rented ?? 0)}',
+                        style: TextStyle(fontSize: AppTheme.fontSizeSmall),
+                      )),
+                      DataCell(Text(
+                        '${product.rented ?? 0}',
+                        style: TextStyle(fontSize: AppTheme.fontSizeSmall),
+                      )),
                       DataCell(Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: Icon(Icons.edit, color: Colors.blue),
+                            icon: Icon(
+                              Icons.edit,
+                              color: Colors.grey,
+                              size: 16,
+                            ),
                             onPressed: () =>
                                 _showProductDialog(product: product),
                           ),
                           IconButton(
-                            icon: Icon(Icons.delete, color: Colors.red),
+                            icon: Icon(
+                              Icons.delete,
+                              color: Colors.red,
+                              size: 16,
+                            ),
                             onPressed: () {
                               // Implement delete functionality
                             },
