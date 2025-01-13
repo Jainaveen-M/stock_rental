@@ -1,0 +1,39 @@
+name: Build Windows Executable
+
+on:
+  push:
+    branches:
+      - main  # Change this to your default branch if it's not 'main'
+  pull_request:
+    branches:
+      - main  # Change this to your default branch if it's not 'main'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11'  # Specify the Java version if needed
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'latest'  # Specify the Flutter version if needed
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Windows Executable
+        run: flutter build windows
+
+      - name: Upload Windows Executable
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-executable
+          path: build/windows/runner/Release/YourAppName.exe  # Replace 'YourAppName' with your actual app name
