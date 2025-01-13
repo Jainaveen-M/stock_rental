@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - main  # Change this to your default branch if it's not 'main'
-  # pull_request:
-  #   branches:
-  #     - main  # Change this to your default branch if it's not 'main'
+  pull_request:
+    branches:
+      - main  # Change this to your default branch if it's not 'main'
 
 jobs:
   build:
@@ -33,7 +33,7 @@ jobs:
         run: flutter build windows
 
       - name: Upload Windows Executable
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: windows-executable
           path: build/windows/runner/Release/YourAppName.exe  # Replace 'YourAppName' with your actual app name
