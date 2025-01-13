@@ -1,3 +1,4 @@
+import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
@@ -10,6 +11,18 @@ import 'package:stock_rental/repo/payment_db_helper.dart';
 import 'package:stock_rental/customer/customer_details_dialog.dart';
 import 'package:stock_rental/customer/add_customer_dialog.dart';
 
+class CustomerStats {
+  final int activeOrders;
+  final int closedOrders;
+  final double totalRevenue;
+
+  CustomerStats({
+    required this.activeOrders,
+    required this.closedOrders,
+    required this.totalRevenue,
+  });
+}
+
 class CustomerDashboard extends StatefulWidget {
   @override
   _CustomerDashboardState createState() => _CustomerDashboardState();
@@ -18,21 +31,174 @@ class CustomerDashboard extends StatefulWidget {
 class _CustomerDashboardState extends State<CustomerDashboard> {
   final _customerDatabase = CustomerDatabase();
   final _orderDatabase = OrderDatabase();
-  final _paymentDatabase = PaymentDatabase();
+  List<Customer> customers = [];
+  List<Customer> _paginatedCustomers = [];
+  int _rowsPerPage = 10;
+  int _currentPage = 0;
   final _searchController = TextEditingController();
-  List<Customer> _customers = [];
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
+    _customerDatabase.init();
+    _orderDatabase.init();
     _loadCustomers();
   }
 
   Future<void> _loadCustomers() async {
-    final customers = await _customerDatabase.getAllCustomers();
+    final allCustomers = await _customerDatabase.getAllCustomers();
     setState(() {
-      _customers = customers;
+      customers = allCustomers;
+      _updatePaginatedCustomers();
     });
+  }
+
+  void _updatePaginatedCustomers() {
+    final filteredCustomers = customers.where((customer) {
+      final searchLower = _searchQuery.toLowerCase();
+      return customer.name.toLowerCase().contains(searchLower) ||
+          customer.phoneNumber.contains(searchLower) ||
+          customer.address.toLowerCase().contains(searchLower);
+    }).toList();
+
+    final startIndex = _currentPage * _rowsPerPage;
+    setState(() {
+      _paginatedCustomers =
+          filteredCustomers.skip(startIndex).take(_rowsPerPage).toList();
+    });
+  }
+
+  Widget _buildCustomersTable() {
+    final filteredCustomers = customers.where((customer) {
+      final searchLower = _searchQuery.toLowerCase();
+      return customer.name.toLowerCase().contains(searchLower) ||
+          customer.phoneNumber.contains(searchLower) ||
+          customer.address.toLowerCase().contains(searchLower);
+    }).toList();
+
+    final totalRows = filteredCustomers.length;
+    final totalPages = (totalRows / _rowsPerPage).ceil();
+
+    return Expanded(
+      child: Card(
+        margin: EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search customers...',
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                    _currentPage = 0;
+                    _updatePaginatedCustomers();
+                  });
+                },
+              ),
+            ),
+            Expanded(
+              child: DataTable2(
+                columnSpacing: 12,
+                horizontalMargin: 12,
+                columns: [
+                  DataColumn2(label: Text('Name'), size: ColumnSize.L),
+                  DataColumn2(label: Text('Phone'), size: ColumnSize.M),
+                  DataColumn2(label: Text('Address'), size: ColumnSize.L),
+                  DataColumn2(label: Text('Actions'), size: ColumnSize.S),
+                ],
+                rows: _paginatedCustomers.map((customer) {
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(customer.name)),
+                      DataCell(Text(customer.phoneNumber)),
+                      DataCell(Text(customer.address)),
+                      DataCell(Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.edit),
+                            onPressed: () => _showCustomerDetails(customer),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => _deleteCustomer(customer),
+                          ),
+                        ],
+                      )),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text('Rows per page: '),
+                      DropdownButton<int>(
+                        value: _rowsPerPage,
+                        items: [10, 20, 50, 100].map((value) {
+                          return DropdownMenuItem<int>(
+                            value: value,
+                            child: Text('$value'),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _rowsPerPage = value!;
+                            _currentPage = 0;
+                            _updatePaginatedCustomers();
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                        '${_currentPage * _rowsPerPage + 1}-${(_currentPage + 1) * _rowsPerPage > totalRows ? totalRows : (_currentPage + 1) * _rowsPerPage} of $totalRows',
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.chevron_left),
+                        onPressed: _currentPage > 0
+                            ? () {
+                                setState(() {
+                                  _currentPage--;
+                                  _updatePaginatedCustomers();
+                                });
+                              }
+                            : null,
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.chevron_right),
+                        onPressed: (_currentPage + 1) < totalPages
+                            ? () {
+                                setState(() {
+                                  _currentPage++;
+                                  _updatePaginatedCustomers();
+                                });
+                              }
+                            : null,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<CustomerStats> _loadCustomerStats(String customerId) async {
@@ -74,7 +240,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
       ]);
 
       // Add data
-      for (var customer in _customers) {
+      for (var customer in customers) {
         final stats = await _loadCustomerStats(customer.id);
         sheet.appendRow([
           customer.id,
@@ -110,45 +276,70 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
     }
   }
 
-  void _showCustomerDetails(Customer customer) async {
-    final stats = await _loadCustomerStats(customer.id);
+  void _showCustomerDetails(Customer customer) {
     showDialog(
       context: context,
-      builder: (context) => CustomerDetailsDialog(
-        customer: customer,
-        onUpdate: (updatedCustomer) async {
-          await _customerDatabase.updateCustomer(updatedCustomer);
-          _loadCustomers();
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Customer updated successfully')),
-          );
-        },
-        onDelete: (customer) async {
-          final orders = await _orderDatabase.getAllOrders();
-          final hasActiveOrders = orders.any(
-            (o) =>
-                o.customerId.toString() == customer.id &&
-                o.status == OrderStatus.active,
-          );
-
-          if (hasActiveOrders) {
+      builder: (context) => AlertDialog(
+        title: Text('Edit Customer'),
+        content: CustomerDetailsDialog(
+          customer: customer,
+          onUpdate: (updatedCustomer) async {
+            await _customerDatabase.updateCustomer(updatedCustomer);
+            _loadCustomers();
+            Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text('Cannot delete customer with active orders')),
+              SnackBar(content: Text('Customer updated successfully')),
             );
-            return;
-          }
+          },
+          onDelete: (customer) async {
+            final orders = await _orderDatabase.getAllOrders();
+            final hasActiveOrders = orders.any(
+              (o) =>
+                  o.customerId.toString() == customer.id &&
+                  o.status == OrderStatus.active,
+            );
 
-          await _customerDatabase.deleteCustomer(customer.id);
-          _loadCustomers();
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Customer deleted successfully')),
-          );
-        },
+            if (hasActiveOrders) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text('Cannot delete customer with active orders')),
+              );
+              return;
+            }
+
+            await _customerDatabase.deleteCustomer(customer.id);
+            _loadCustomers();
+            Navigator.pop(context);
+          },
+        ),
       ),
     );
+  }
+
+  Future<void> _deleteCustomer(Customer customer) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete Customer'),
+        content: Text('Are you sure you want to delete this customer?'),
+        actions: [
+          TextButton(
+            child: Text('Cancel'),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          TextButton(
+            child: Text('Delete'),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _customerDatabase.deleteCustomer(customer.id);
+      _loadCustomers();
+    }
   }
 
   @override
@@ -166,40 +357,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: 'Search Customers',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  // Filter will be applied automatically
-                });
-              },
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _customers.length,
-              itemBuilder: (context, index) {
-                final customer = _customers[index];
-                if (_searchController.text.isNotEmpty &&
-                    !customer.name
-                        .toLowerCase()
-                        .contains(_searchController.text.toLowerCase()) &&
-                    !customer.phoneNumber.contains(_searchController.text)) {
-                  return SizedBox.shrink();
-                }
-                return _buildCustomerCard(customer);
-              },
-            ),
-          ),
+          _buildCustomersTable(),
         ],
       ),
       floatingActionButton: FloatingActionButton(
