@@ -44,6 +44,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_datetime_picker_plus: ^2.2.0
   data_table_2: ^2.5.18
+  google_sign_in: ^6.2.1
+  googleapis: ^12.0.0
+  googleapis_auth: ^1.4.1
+  path: ^1.8.3
+  archive: ^3.4.10
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

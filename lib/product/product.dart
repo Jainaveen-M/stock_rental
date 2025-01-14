@@ -32,8 +32,6 @@ class _ProductScreenState extends State<ProductScreen> {
     final nameController = TextEditingController(text: product?.name ?? "");
     final categoryController =
         TextEditingController(text: product?.category ?? "");
-    final priceController =
-        TextEditingController(text: product?.price.toString() ?? "");
     final stockController =
         TextEditingController(text: product?.stock.toString() ?? "0");
     final descriptionController =
@@ -91,14 +89,6 @@ class _ProductScreenState extends State<ProductScreen> {
               SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(
-                    child: _buildTextField(
-                      controller: priceController,
-                      label: 'Price per Day',
-                      icon: Icons.attach_money,
-                      isNumber: true,
-                    ),
-                  ),
                   SizedBox(width: 16),
                   Expanded(
                     child: _buildTextField(
@@ -132,14 +122,12 @@ class _ProductScreenState extends State<ProductScreen> {
                   SizedBox(width: 12),
                   ElevatedButton(
                     onPressed: () async {
-                      if (_validateInputs(
-                          nameController.text, priceController.text)) {
+                      if (_validateInputs(nameController.text)) {
                         final newProduct = Product(
                           id: product?.id ??
                               DateTime.now().millisecondsSinceEpoch,
                           name: nameController.text,
                           category: categoryController.text,
-                          price: double.parse(priceController.text),
                           stock: int.tryParse(stockController.text) ?? 0,
                           description: descriptionController.text,
                         );
@@ -205,13 +193,9 @@ class _ProductScreenState extends State<ProductScreen> {
     );
   }
 
-  bool _validateInputs(String name, String price) {
+  bool _validateInputs(String name) {
     if (name.isEmpty) {
       _showError('Product name is required');
-      return false;
-    }
-    if (price.isEmpty || double.tryParse(price) == null) {
-      _showError('Valid price is required');
       return false;
     }
     return true;
@@ -290,7 +274,6 @@ class _ProductScreenState extends State<ProductScreen> {
                   DataColumn2(label: Text('ID'), size: ColumnSize.S),
                   DataColumn2(label: Text('Name'), size: ColumnSize.S),
                   DataColumn2(label: Text('Category'), size: ColumnSize.S),
-                  DataColumn2(label: Text('Price/Day'), size: ColumnSize.S),
                   DataColumn2(label: Text('Stock'), size: ColumnSize.S),
                   DataColumn2(label: Text('Available'), size: ColumnSize.S),
                   DataColumn2(label: Text('Rented'), size: ColumnSize.S),
@@ -309,10 +292,6 @@ class _ProductScreenState extends State<ProductScreen> {
                       )),
                       DataCell(Text(
                         product.category,
-                        style: TextStyle(fontSize: AppTheme.fontSizeSmall),
-                      )),
-                      DataCell(Text(
-                        '₹${product.price.toStringAsFixed(2)}',
                         style: TextStyle(fontSize: AppTheme.fontSizeSmall),
                       )),
                       DataCell(Text(

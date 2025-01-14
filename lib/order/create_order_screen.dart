@@ -597,69 +597,77 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       child: Row(
         children: [
           Expanded(
-            flex: 4,
-            child: DropdownButtonFormField<Product>(
-              value: widget.availableProducts
-                  .firstWhere((p) => p.id == field.productId),
-              items: widget.availableProducts
-                  .map((p) => DropdownMenuItem(
-                        value: p,
-                        child: Text(p.name),
-                      ))
-                  .toList(),
-              onChanged: (Product? value) {
-                if (value != null) {
-                  setState(() {
-                    field.productId = value.id;
-                    field.productName = value.name;
-                    field.price = value.price;
-                  });
-                }
-              },
-              decoration: InputDecoration(
+            flex: 2,
+            child: SizedBox(
+              height: 38,
+              child: DropdownButtonFormField<Product>(
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 8),
-                border: OutlineInputBorder(),
+                value: widget.availableProducts
+                    .firstWhere((p) => p.id == field.productId),
+                items: widget.availableProducts
+                    .map((p) => DropdownMenuItem(
+                          value: p,
+                          child: Text(p.name),
+                        ))
+                    .toList(),
+                onChanged: (Product? value) {
+                  if (value != null) {
+                    setState(() {
+                      field.productId = value.id;
+                      field.productName = value.name;
+                    });
+                  }
+                },
+                decoration: InputDecoration(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                  border: OutlineInputBorder(),
+                ),
               ),
             ),
           ),
           SizedBox(width: 8),
           Expanded(
             flex: 1,
-            child: TextFormField(
-              initialValue: field.quantity.toString(),
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                border: OutlineInputBorder(),
+            child: SizedBox(
+              height: 38,
+              child: TextFormField(
+                initialValue: field.quantity.toString(),
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    field.quantity = int.tryParse(value) ?? 1;
+                  });
+                },
               ),
-              onChanged: (value) {
-                setState(() {
-                  field.quantity = int.tryParse(value) ?? 1;
-                });
-              },
             ),
           ),
           SizedBox(width: 8),
           Expanded(
             flex: 2,
-            child: TextFormField(
-              initialValue: (field.price ?? 0).toStringAsFixed(2),
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                border: OutlineInputBorder(),
-                prefixText: '₹',
+            child: SizedBox(
+              height: 38,
+              child: TextFormField(
+                initialValue: (field.price ?? 0).toStringAsFixed(2),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                  border: OutlineInputBorder(),
+                  prefixText: '₹',
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    field.price = double.tryParse(value) ?? 0.0;
+                  });
+                },
               ),
-              onChanged: (value) {
-                setState(() {
-                  field.price = double.tryParse(value) ?? 0.0;
-                });
-              },
             ),
           ),
           Expanded(
