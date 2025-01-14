@@ -325,7 +325,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                 );
                 return;
               }
-
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
@@ -362,7 +361,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
-                border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey.shade300),
+                ),
               ),
               child: Column(
                 children: [
@@ -412,160 +413,183 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(16),
-                child: Column(
+                child: Row(
                   children: [
-                    Card(
-                      elevation: 4,
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(16),
-                            color: Theme.of(context).primaryColor,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                    flex: 4,
-                                    child: Text('Product',
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold))),
-                                Expanded(
-                                    flex: 1,
-                                    child: Text('Qty',
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold))),
-                                Expanded(
-                                    flex: 2,
-                                    child: Text('Price/Day',
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold))),
-                                Expanded(
-                                    flex: 2,
-                                    child: Text('Total',
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold))),
-                                SizedBox(width: 48), // For delete button
-                              ],
-                            ),
-                          ),
-                          if (productFields.isEmpty)
-                            Padding(
+                    Expanded(
+                      flex: 2,
+                      child: Card(
+                        elevation: 4,
+                        child: Column(
+                          children: [
+                            Container(
                               padding: EdgeInsets.all(16),
-                              child: Text('No products added',
-                                  style: TextStyle(color: Colors.grey)),
-                            ),
-                          ...productFields
-                              .map((field) => _buildProductRow(field)),
-                          Divider(height: 1),
-                          Container(
-                            padding: EdgeInsets.all(16),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Order Total:',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16)),
-                                Text(
-                                  '₹${orderTotal.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    color: Theme.of(context).primaryColor,
-                                  ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(8),
+                                  topRight: Radius.circular(8),
                                 ),
-                              ],
+                                border: Border(
+                                  bottom:
+                                      BorderSide(color: Colors.grey.shade300),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                      flex: 1,
+                                      child: Text('Product',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold))),
+                                  Expanded(
+                                      flex: 1,
+                                      child: Text('Qty',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold))),
+                                  Expanded(
+                                      flex: 1,
+                                      child: Text('Price/Day',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold))),
+                                  Expanded(
+                                      flex: 1,
+                                      child: Text('Total',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold))),
+                                  SizedBox(width: 48), // For delete button
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                            if (productFields.isEmpty)
+                              Padding(
+                                padding: EdgeInsets.all(16),
+                                child: Text('No products added',
+                                    style: TextStyle(color: Colors.grey)),
+                              ),
+                            ...productFields
+                                .map((field) => _buildProductRow(field)),
+                            Divider(
+                              height: 1,
+                            ),
+                            Container(
+                              padding: EdgeInsets.all(16),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Order Total:',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16)),
+                                  Text(
+                                    '₹${orderTotal.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Payment Details',
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold)),
-                          SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                        'Total Amount: ₹${_calculateTotal().toStringAsFixed(2)}',
-                                        style: TextStyle(fontSize: 16)),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _advanceController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Advance Amount',
-                                    prefixText: '₹',
-                                    border: OutlineInputBorder(),
+                    Expanded(
+                      flex: 1,
+                      child: Container(
+                        width: 200,
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Payment Details',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                          'Total Amount: ₹${_calculateTotal().toStringAsFixed(2)}',
+                                          style: TextStyle(fontSize: 16)),
+                                    ],
                                   ),
-                                  keyboardType: TextInputType.numberWithOptions(
-                                      decimal: true),
-                                  onChanged: (value) {
-                                    setState(
-                                        () {}); // Trigger rebuild to update balance
-                                  },
-                                  validator: (value) {
-                                    if (value != null && value.isNotEmpty) {
-                                      double? advance = double.tryParse(value);
-                                      if (advance != null &&
-                                          advance > _calculateTotal()) {
-                                        return 'Advance cannot exceed total';
-                                      }
-                                    }
-                                    return null;
-                                  },
                                 ),
+                                SizedBox(width: 16),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _advanceController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Advance Amount',
+                                      prefixText: '₹',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    keyboardType:
+                                        TextInputType.numberWithOptions(
+                                            decimal: true),
+                                    onChanged: (value) {
+                                      setState(
+                                          () {}); // Trigger rebuild to update balance
+                                    },
+                                    validator: (value) {
+                                      if (value != null && value.isNotEmpty) {
+                                        double? advance =
+                                            double.tryParse(value);
+                                        if (advance != null &&
+                                            advance > _calculateTotal()) {
+                                          return 'Advance cannot exceed total';
+                                        }
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Balance: ₹${_calculateBalance().toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).primaryColor,
                               ),
-                            ],
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Balance: ₹${_calculateBalance().toStringAsFixed(2)}',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).primaryColor,
                             ),
-                          ),
-                          SizedBox(height: 16),
-                          DropdownButtonFormField<String>(
-                            value: _selectedPaymentMode,
-                            decoration: InputDecoration(
-                              labelText: 'Payment Mode',
-                              border: OutlineInputBorder(),
+                            SizedBox(height: 16),
+                            DropdownButtonFormField<String>(
+                              value: _selectedPaymentMode,
+                              decoration: InputDecoration(
+                                labelText: 'Payment Mode',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: ['cash', 'card', 'upi']
+                                  .map((mode) => DropdownMenuItem(
+                                        value: mode,
+                                        child: Text(mode.toUpperCase()),
+                                      ))
+                                  .toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedPaymentMode = value!;
+                                });
+                              },
                             ),
-                            items: ['cash', 'card', 'upi']
-                                .map((mode) => DropdownMenuItem(
-                                      value: mode,
-                                      child: Text(mode.toUpperCase()),
-                                    ))
-                                .toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedPaymentMode = value!;
-                              });
-                            },
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -597,7 +621,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       child: Row(
         children: [
           Expanded(
-            flex: 2,
+            flex: 1,
             child: SizedBox(
               height: 38,
               child: DropdownButtonFormField<Product>(
@@ -649,7 +673,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           ),
           SizedBox(width: 8),
           Expanded(
-            flex: 2,
+            flex: 1,
             child: SizedBox(
               height: 38,
               child: TextFormField(
@@ -671,7 +695,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             ),
           ),
           Expanded(
-            flex: 2,
+            flex: 1,
             child: Text('₹${total.toStringAsFixed(2)}'),
           ),
           IconButton(
