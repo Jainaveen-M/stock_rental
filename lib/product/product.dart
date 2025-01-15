@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:stock_rental/config/app_theme.dart';
@@ -12,19 +14,37 @@ class ProductScreen extends StatefulWidget {
 class _ProductScreenState extends State<ProductScreen> {
   final _db = ProductDatabase();
   List<Product> _products = [];
+  List<Product> _paginatedProducts = [];
   final _searchController = TextEditingController();
   String _sortBy = "Name";
+
+  // Pagination variables
+  int _rowsPerPage = 10;
+  int _currentPage = 0;
+  int get _startIndex => _currentPage * _rowsPerPage;
+  int get _endIndex =>
+      min(_startIndex + _rowsPerPage, _filteredProducts.length);
+
+  List<Product> get _filteredProducts {
+    return _products.where((product) {
+      final search = _searchController.text.toLowerCase();
+      return product.name.toLowerCase().contains(search) ||
+          product.category.toLowerCase().contains(search);
+    }).toList();
+  }
 
   @override
   void initState() {
     super.initState();
     _loadProducts();
+    _searchController.addListener(_onSearchChanged);
   }
 
   Future<void> _loadProducts() async {
     final products = await _db.getProducts();
     setState(() {
       _products = products.map((map) => Product.fromMap(map.toMap())).toList();
+      _updatePaginatedProducts();
     });
   }
 
@@ -214,6 +234,14 @@ class _ProductScreenState extends State<ProductScreen> {
     );
   }
 
+  void _updatePaginatedProducts() {
+    setState(() {
+      _paginatedProducts =
+          _filteredProducts.skip(_startIndex).take(_rowsPerPage).toList();
+    });
+  }
+
+  // Update the build method to use pagination
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -267,81 +295,173 @@ class _ProductScreenState extends State<ProductScreen> {
           Expanded(
             child: Card(
               margin: EdgeInsets.all(10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 4,
-              child: DataTable2(
-                columnSpacing: 12,
-                horizontalMargin: 10,
-                columns: [
-                  DataColumn2(label: Text('ID'), size: ColumnSize.S),
-                  DataColumn2(label: Text('Name'), size: ColumnSize.S),
-                  DataColumn2(label: Text('Category'), size: ColumnSize.S),
-                  DataColumn2(label: Text('Stock'), size: ColumnSize.S),
-                  DataColumn2(label: Text('Available'), size: ColumnSize.S),
-                  DataColumn2(label: Text('Rented'), size: ColumnSize.S),
-                  DataColumn2(label: Text('Actions'), size: ColumnSize.S),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: DataTable2(
+                      columnSpacing: 12,
+                      horizontalMargin: 10,
+                      columns: [
+                        DataColumn2(label: Text('ID'), size: ColumnSize.S),
+                        DataColumn2(label: Text('Name'), size: ColumnSize.S),
+                        DataColumn2(
+                            label: Text('Category'), size: ColumnSize.S),
+                        DataColumn2(label: Text('Stock'), size: ColumnSize.S),
+                        DataColumn2(
+                            label: Text('Available'), size: ColumnSize.S),
+                        DataColumn2(label: Text('Rented'), size: ColumnSize.S),
+                        DataColumn2(label: Text('Actions'), size: ColumnSize.S),
+                      ],
+                      rows: _paginatedProducts.map((product) {
+                        return DataRow2(
+                          cells: [
+                            DataCell(Text(
+                              '#${product.id}',
+                              style:
+                                  TextStyle(fontSize: AppTheme.fontSizeSmall),
+                            )),
+                            DataCell(Text(
+                              product.name,
+                              style:
+                                  TextStyle(fontSize: AppTheme.fontSizeSmall),
+                            )),
+                            DataCell(Text(
+                              product.category,
+                              style:
+                                  TextStyle(fontSize: AppTheme.fontSizeSmall),
+                            )),
+                            DataCell(Text(
+                              '${product.stock}',
+                              style:
+                                  TextStyle(fontSize: AppTheme.fontSizeSmall),
+                            )),
+                            DataCell(Text(
+                              '${product.stock - (product.rented ?? 0)}',
+                              style:
+                                  TextStyle(fontSize: AppTheme.fontSizeSmall),
+                            )),
+                            DataCell(Text(
+                              '${product.rented ?? 0}',
+                              style:
+                                  TextStyle(fontSize: AppTheme.fontSizeSmall),
+                            )),
+                            DataCell(Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.edit,
+                                    color: Colors.grey,
+                                    size: 16,
+                                  ),
+                                  onPressed: () =>
+                                      _showProductDialog(product: product),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                    size: 16,
+                                  ),
+                                  onPressed: () {
+                                    // Implement delete functionality
+                                  },
+                                ),
+                              ],
+                            )),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  // Pagination controls
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Showing ${_startIndex + 1} to ${_endIndex} of ${_filteredProducts.length}',
+                          style: TextStyle(fontSize: AppTheme.fontSizeSmall),
+                        ),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.chevron_left),
+                              onPressed: _currentPage > 0
+                                  ? () {
+                                      setState(() {
+                                        _currentPage--;
+                                        _updatePaginatedProducts();
+                                      });
+                                    }
+                                  : null,
+                            ),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                'Page ${_currentPage + 1}',
+                                style:
+                                    TextStyle(fontSize: AppTheme.fontSizeSmall),
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.chevron_right),
+                              onPressed: (_startIndex + _rowsPerPage) <
+                                      _filteredProducts.length
+                                  ? () {
+                                      setState(() {
+                                        _currentPage++;
+                                        _updatePaginatedProducts();
+                                      });
+                                    }
+                                  : null,
+                            ),
+                            SizedBox(width: 24),
+                            DropdownButton<int>(
+                              value: _rowsPerPage,
+                              items: [10, 20, 50, 100].map((rows) {
+                                return DropdownMenuItem<int>(
+                                  value: rows,
+                                  child: Text('$rows per page'),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() {
+                                    _rowsPerPage = value;
+                                    _currentPage = 0;
+                                    _updatePaginatedProducts();
+                                  });
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
-                rows: _products.map((product) {
-                  return DataRow2(
-                    cells: [
-                      DataCell(Text(
-                        '#${product.id}',
-                        style: TextStyle(fontSize: AppTheme.fontSizeSmall),
-                      )),
-                      DataCell(Text(
-                        product.name,
-                        style: TextStyle(fontSize: AppTheme.fontSizeSmall),
-                      )),
-                      DataCell(Text(
-                        product.category,
-                        style: TextStyle(fontSize: AppTheme.fontSizeSmall),
-                      )),
-                      DataCell(Text(
-                        '${product.stock}',
-                        style: TextStyle(fontSize: AppTheme.fontSizeSmall),
-                      )),
-                      DataCell(Text(
-                        '${product.stock - (product.rented ?? 0)}',
-                        style: TextStyle(fontSize: AppTheme.fontSizeSmall),
-                      )),
-                      DataCell(Text(
-                        '${product.rented ?? 0}',
-                        style: TextStyle(fontSize: AppTheme.fontSizeSmall),
-                      )),
-                      DataCell(Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              Icons.edit,
-                              color: Colors.grey,
-                              size: 16,
-                            ),
-                            onPressed: () =>
-                                _showProductDialog(product: product),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              Icons.delete,
-                              color: Colors.red,
-                              size: 16,
-                            ),
-                            onPressed: () {
-                              // Implement delete functionality
-                            },
-                          ),
-                        ],
-                      )),
-                    ],
-                  );
-                }).toList(),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  // Update search functionality
+  void _onSearchChanged() {
+    setState(() {
+      _currentPage = 0;
+      _updatePaginatedProducts();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
   }
 }
