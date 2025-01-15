@@ -130,13 +130,17 @@ class _ProductScreenState extends State<ProductScreen> {
                           category: categoryController.text,
                           stock: int.tryParse(stockController.text) ?? 0,
                           description: descriptionController.text,
+                          rented: product?.rented ?? 0,
                         );
 
                         if (product == null) {
                           await _db.addProduct(newProduct.toMap());
                         } else {
-                          await _db.updateProduct(
-                              product.dbKey!, newProduct.toMap());
+                          final dbProduct = await _db.getProduct(product.id);
+                          if (dbProduct != null) {
+                            await _db.updateProduct(
+                                dbProduct.dbKey!, newProduct.toMap());
+                          }
                         }
                         _loadProducts();
                         Navigator.pop(context);
