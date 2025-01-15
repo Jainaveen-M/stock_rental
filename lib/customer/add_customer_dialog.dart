@@ -1,28 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:stock_rental/model/customer.dart';
 
-class AddCustomerDialog extends StatefulWidget {
+class AddCustomerDialog extends StatelessWidget {
   final Function(Customer) onAdd;
-
-  const AddCustomerDialog({
-    Key? key,
-    required this.onAdd,
-  }) : super(key: key);
-
-  @override
-  _AddCustomerDialogState createState() => _AddCustomerDialogState();
-}
-
-class _AddCustomerDialogState extends State<AddCustomerDialog> {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final _proofController = TextEditingController();
+
+  AddCustomerDialog({
+    required this.onAdd,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         padding: EdgeInsets.all(24),
         constraints: BoxConstraints(maxWidth: 400),
@@ -91,6 +84,23 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
                   return null;
                 },
               ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: _proofController,
+                decoration: InputDecoration(
+                  labelText: 'Proof Number',
+                  prefixIcon: Icon(Icons.ad_units),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter Proof number';
+                  }
+                  return null;
+                },
+              ),
               SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -104,12 +114,13 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
                         final customer = Customer(
-                          id: DateTime.now().millisecondsSinceEpoch.toString(),
+                          id: DateTime.now().millisecondsSinceEpoch,
                           name: _nameController.text,
                           phoneNumber: _phoneController.text,
                           address: _addressController.text,
+                          proofNumber: _proofController.text,
                         );
-                        widget.onAdd(customer);
+                        onAdd(customer);
                         Navigator.pop(context);
                       }
                     },

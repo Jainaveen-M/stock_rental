@@ -63,7 +63,7 @@ class CustomerDatabase {
   }
 
   Future<void> updateCustomer(Customer customer) async {
-    await _customerStore.record(int.parse(customer.id)).update(
+    await _customerStore.record(int.parse(customer.id.toString())).update(
           _db,
           customer.toMap(),
         );
@@ -71,7 +71,7 @@ class CustomerDatabase {
 
   Future<void> saveCustomer(Customer customer) async {
     await _customerStore
-        .record(int.parse(customer.id))
+        .record(int.parse(customer.id.toString()))
         .put(_db, customer.toMap());
   }
 }

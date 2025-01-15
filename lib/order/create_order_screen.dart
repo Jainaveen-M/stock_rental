@@ -238,7 +238,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     final newOrder = Order(
       orderId: DateTime.now().millisecondsSinceEpoch,
       customerName: selectedCustomer!.name,
-      customerId: int.parse(selectedCustomer!.id),
+      customerId: int.parse(selectedCustomer!.id.toString()),
       orderDate: DateTime.now(),
       startDate: startDate,
       endDate: endDate,
@@ -276,7 +276,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     final previewOrder = Order(
       orderId: DateTime.now().millisecondsSinceEpoch,
       customerName: selectedCustomer!.name,
-      customerId: int.parse(selectedCustomer!.id),
+      customerId: int.parse(selectedCustomer!.id.toString()),
       orderDate: DateTime.now(),
       products: productFields,
       status: OrderStatus.active,
@@ -726,7 +726,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     final previewOrder = Order(
       orderId: DateTime.now().millisecondsSinceEpoch,
       customerName: selectedCustomer!.name,
-      customerId: int.parse(selectedCustomer!.id),
+      customerId: int.parse(selectedCustomer!.id.toString()),
       orderDate: DateTime.now(),
       startDate: startDate,
       endDate: endDate,

@@ -1,269 +1,104 @@
 import 'package:flutter/material.dart';
 import 'package:stock_rental/model/customer.dart';
 
-class CustomerDetailsDialog extends StatefulWidget {
+class CustomerDetailsDialog extends StatelessWidget {
   final Customer customer;
   final Function(Customer) onUpdate;
   final Function(Customer) onDelete;
+  final _formKey = GlobalKey<FormState>();
+  final _nameController;
+  final _phoneController;
+  final _addressController;
+  final _proofController;
 
-  const CustomerDetailsDialog({
-    Key? key,
+  CustomerDetailsDialog({
     required this.customer,
     required this.onUpdate,
     required this.onDelete,
-  }) : super(key: key);
-
-  @override
-  _CustomerDetailsDialogState createState() => _CustomerDetailsDialogState();
-}
-
-class _CustomerDetailsDialogState extends State<CustomerDetailsDialog> {
-  late TextEditingController _nameController;
-  late TextEditingController _phoneController;
-  late TextEditingController _addressController;
-  bool _isEditing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.customer.name);
-    _phoneController = TextEditingController(text: widget.customer.phoneNumber);
-    _addressController = TextEditingController(text: widget.customer.address);
-  }
+  })  : _nameController = TextEditingController(text: customer.name),
+        _phoneController = TextEditingController(text: customer.phoneNumber),
+        _addressController = TextEditingController(text: customer.address),
+        _proofController = TextEditingController(text: customer.proofNumber);
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        padding: EdgeInsets.all(24),
-        constraints: BoxConstraints(maxWidth: 500),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Customer Details',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(_isEditing ? Icons.save : Icons.edit),
-                      onPressed: () {
-                        if (_isEditing) {
-                          final updatedCustomer = widget.customer.copyWith(
-                            name: _nameController.text,
-                            phoneNumber: _phoneController.text,
-                            address: _addressController.text,
-                          );
-                          widget.onUpdate(updatedCustomer);
-                        }
-                        setState(() {
-                          _isEditing = !_isEditing;
-                        });
-                      },
-                      tooltip: _isEditing ? 'Save' : 'Edit',
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _showDeleteConfirmation(context),
-                      tooltip: 'Delete',
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            SizedBox(height: 24),
-            _buildTextField(
-              'Name',
-              _nameController,
-              Icons.person,
-              enabled: _isEditing,
-            ),
-            SizedBox(height: 16),
-            _buildTextField(
-              'Phone',
-              _phoneController,
-              Icons.phone,
-              enabled: _isEditing,
-            ),
-            SizedBox(height: 16),
-            _buildTextField(
-              'Address',
-              _addressController,
-              Icons.location_on,
-              enabled: _isEditing,
-              maxLines: 3,
-            ),
-            SizedBox(height: 24),
-            if (!_isEditing) _buildCustomerStats(),
-            SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Close'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField(
-    String label,
-    TextEditingController controller,
-    IconData icon, {
-    bool enabled = true,
-    int maxLines = 1,
-  }) {
-    return TextField(
-      controller: controller,
-      enabled: enabled,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        filled: !enabled,
-      ),
-    );
-  }
-
-  Widget _buildCustomerStats() {
-    return FutureBuilder<CustomerStats>(
-      future: _loadCustomerStats(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return Center(child: CircularProgressIndicator());
-        }
-
-        final stats = snapshot.data!;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Customer Activity',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 16),
-            Row(
-              children: [
-                _buildStatCard(
-                  'Active Orders',
-                  stats.activeOrders.toString(),
-                  Icons.pending_actions,
-                  Colors.blue,
-                ),
-                SizedBox(width: 16),
-                _buildStatCard(
-                  'Closed Orders',
-                  stats.closedOrders.toString(),
-                  Icons.check_circle,
-                  Colors.green,
-                ),
-                SizedBox(width: 16),
-                _buildStatCard(
-                  'Total Revenue',
-                  '₹${stats.totalRevenue.toStringAsFixed(2)}',
-                  Icons.payments,
-                  Colors.purple,
-                ),
-              ],
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
-    return Expanded(
       child: Container(
         padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color),
-            SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 12,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'Name'),
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Name is required' : null,
               ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
+              TextFormField(
+                controller: _phoneController,
+                decoration: InputDecoration(labelText: 'Phone Number'),
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Phone number is required' : null,
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<CustomerStats> _loadCustomerStats() async {
-    // Implement this method to load customer statistics
-    // This should query your local database for orders and payments
-    return CustomerStats(
-      activeOrders: 0,
-      closedOrders: 0,
-      totalRevenue: 0,
-    );
-  }
-
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Delete Customer'),
-        content: Text(
-          'Are you sure you want to delete this customer? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+              TextFormField(
+                controller: _addressController,
+                decoration: InputDecoration(labelText: 'Address'),
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Address is required' : null,
+              ),
+              TextFormField(
+                controller: _proofController,
+                decoration: InputDecoration(
+                  labelText: 'proof Number',
+                  hintText: 'Optional',
+                ),
+                keyboardType: TextInputType.number,
+                maxLength: 12,
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    if (value.length != 12) {
+                      return 'proof number must be 12 digits';
+                    }
+                    if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
+                      return 'Only numbers are allowed';
+                    }
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_formKey.currentState?.validate() ?? false) {
+                        final updatedCustomer = Customer(
+                          id: customer.id,
+                          name: _nameController.text,
+                          phoneNumber: _phoneController.text,
+                          address: _addressController.text,
+                          proofNumber: _proofController.text.isEmpty
+                              ? null
+                              : _proofController.text,
+                        );
+                        onUpdate(updatedCustomer);
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: Text('Save'),
+                  ),
+                ],
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // Close confirmation dialog
-              widget.onDelete(widget.customer);
-              Navigator.pop(context); // Close details dialog
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: Text('Delete'),
-          ),
-        ],
+        ),
       ),
     );
   }

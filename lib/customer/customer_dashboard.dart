@@ -111,6 +111,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                   DataColumn2(label: Text('Name'), size: ColumnSize.L),
                   DataColumn2(label: Text('Phone'), size: ColumnSize.M),
                   DataColumn2(label: Text('Address'), size: ColumnSize.L),
+                  DataColumn2(label: Text('proof'), size: ColumnSize.M),
                   DataColumn2(label: Text('Actions'), size: ColumnSize.S),
                 ],
                 rows: _paginatedCustomers.map((customer) {
@@ -119,6 +120,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                       DataCell(Text(customer.name)),
                       DataCell(Text(customer.phoneNumber)),
                       DataCell(Text(customer.address)),
+                      DataCell(Text(customer.proofNumber ?? 'Not provided')),
                       DataCell(Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -241,7 +243,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
 
       // Add data
       for (var customer in customers) {
-        final stats = await _loadCustomerStats(customer.id);
+        final stats = await _loadCustomerStats(customer.id.toString());
         sheet.appendRow([
           customer.id,
           customer.name,
@@ -307,7 +309,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
               return;
             }
 
-            await _customerDatabase.deleteCustomer(customer.id);
+            await _customerDatabase.deleteCustomer(customer.id.toString());
             _loadCustomers();
             Navigator.pop(context);
           },
@@ -337,7 +339,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
     );
 
     if (confirm == true) {
-      await _customerDatabase.deleteCustomer(customer.id);
+      await _customerDatabase.deleteCustomer(customer.id.toString());
       _loadCustomers();
     }
   }
@@ -430,7 +432,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                 ),
               ),
               FutureBuilder<CustomerStats>(
-                future: _loadCustomerStats(customer.id),
+                future: _loadCustomerStats(customer.id.toString()),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return CircularProgressIndicator();
