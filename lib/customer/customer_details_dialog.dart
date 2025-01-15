@@ -22,7 +22,8 @@ class CustomerDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return SizedBox(
+      width: 300,
       child: Container(
         padding: EdgeInsets.all(16),
         child: Form(
@@ -30,43 +31,33 @@ class CustomerDetailsDialog extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(labelText: 'Name'),
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Name is required' : null,
+              _buildTextField(
+                'Name',
+                _nameController,
+                Icons.person,
+                enabled: true,
               ),
-              TextFormField(
-                controller: _phoneController,
-                decoration: InputDecoration(labelText: 'Phone Number'),
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Phone number is required' : null,
+              SizedBox(height: 16),
+              _buildTextField(
+                'Phone',
+                _phoneController,
+                Icons.phone,
+                enabled: true,
               ),
-              TextFormField(
-                controller: _addressController,
-                decoration: InputDecoration(labelText: 'Address'),
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Address is required' : null,
+              SizedBox(height: 16),
+              _buildTextField(
+                'Address',
+                _addressController,
+                Icons.location_on,
+                enabled: true,
+                maxLines: 3,
               ),
-              TextFormField(
-                controller: _proofController,
-                decoration: InputDecoration(
-                  labelText: 'proof Number',
-                  hintText: 'Optional',
-                ),
-                keyboardType: TextInputType.number,
-                maxLength: 12,
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    if (value.length != 12) {
-                      return 'proof number must be 12 digits';
-                    }
-                    if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
-                      return 'Only numbers are allowed';
-                    }
-                  }
-                  return null;
-                },
+              SizedBox(height: 16),
+              _buildTextField(
+                'Proof Number',
+                _proofController,
+                Icons.perm_identity_outlined,
+                enabled: true,
               ),
               SizedBox(height: 16),
               Row(
@@ -98,6 +89,30 @@ class CustomerDetailsDialog extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    IconData icon, {
+    bool enabled = true,
+    int maxLines = 1,
+  }) {
+    return SizedBox(
+      child: TextField(
+        controller: controller,
+        enabled: enabled,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: !enabled,
         ),
       ),
     );
