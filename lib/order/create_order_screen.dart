@@ -4,6 +4,7 @@ import 'package:stock_rental/model/order.dart';
 import 'package:stock_rental/model/product.dart';
 import 'package:stock_rental/model/customer.dart';
 import 'package:stock_rental/model/product_filed.dart';
+import 'package:stock_rental/model/rental_agreement.dart';
 import 'package:stock_rental/repo/product_db_helper.dart';
 import 'package:stock_rental/order/retail_bill_preview.dart';
 import 'package:stock_rental/model/payment.dart';
@@ -234,9 +235,21 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     final totalAmount = _calculateTotal();
     final advanceAmount = double.tryParse(_advanceController.text) ?? 0.0;
     final balanceAmount = totalAmount - advanceAmount;
+    final orderId = DateTime.now().millisecondsSinceEpoch;
+    final rentalAgreement = RentalAgreement(
+      id: DateTime.now().millisecondsSinceEpoch,
+      orderId: orderId,
+      customer: selectedCustomer!,
+      startDate: startDate,
+      endDate: endDate,
+      products: productFields,
+      totalAmount: totalAmount,
+      advanceAmount: advanceAmount,
+      agreementDate: startDate!,
+    );
 
     final newOrder = Order(
-      orderId: DateTime.now().millisecondsSinceEpoch,
+      orderId: orderId,
       customerName: selectedCustomer!.name,
       customerId: int.parse(selectedCustomer!.id.toString()),
       orderDate: DateTime.now(),
@@ -246,6 +259,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       status: OrderStatus.active,
       advanceAmount: advanceAmount,
       totalAmount: totalAmount,
+      rentalAgreement: rentalAgreement,
     );
 
     await _updateProductRentals(productFields);

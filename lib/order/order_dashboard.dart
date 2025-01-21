@@ -7,6 +7,8 @@ import 'package:stock_rental/model/order.dart';
 import 'package:stock_rental/model/product.dart';
 import 'package:stock_rental/model/customer.dart';
 import 'package:stock_rental/model/product_filed.dart';
+import 'package:stock_rental/model/rental_agreement.dart';
+import 'package:stock_rental/order/retail_agreement_preview.dart';
 import 'package:stock_rental/repo/order_db_helper.dart';
 import 'package:stock_rental/repo/customer_db_helper.dart';
 import 'package:stock_rental/repo/product_db_helper.dart';
@@ -809,10 +811,22 @@ class _OrdersDashboardState extends State<OrdersDashboard> {
   }
 
   void _showInvoice(Order order) {
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) => RetailBillPreview(
+    //       order: order,
+    //       rentalDays: order.endDate!.difference(order.startDate!).inDays + 1,
+    //       advanceAmount: order.advanceAmount ?? 0.0,
+    //       balanceAmount:
+    //           (order.totalAmount ?? 0.0) - (order.advanceAmount ?? 0.0),
+    //     ),
+    //   ),
+    // );
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RetailBillPreview(
+        builder: (context) => RetailAgreementPreview(
           order: order,
           rentalDays: order.endDate!.difference(order.startDate!).inDays + 1,
           advanceAmount: order.advanceAmount ?? 0.0,

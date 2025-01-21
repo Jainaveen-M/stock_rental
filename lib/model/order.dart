@@ -1,5 +1,6 @@
 import 'package:stock_rental/model/product_filed.dart';
 import 'package:flutter/material.dart';
+import 'package:stock_rental/model/rental_agreement.dart';
 
 enum OrderStatus { active, closed, expired, pending }
 
@@ -14,6 +15,7 @@ class Order {
   OrderStatus status;
   final double? totalAmount;
   final double advanceAmount;
+  RentalAgreement? rentalAgreement;
 
   Order({
     required this.orderId,
@@ -26,6 +28,7 @@ class Order {
     this.status = OrderStatus.pending,
     this.totalAmount,
     this.advanceAmount = 0.0,
+    this.rentalAgreement,
   });
 
   bool get isActive => status == OrderStatus.active;
@@ -84,6 +87,7 @@ class Order {
         'status': status.toString(),
         'totalAmount': totalAmount ?? products.totalAmount,
         'advanceAmount': advanceAmount,
+        'rentalAgreement': rentalAgreement?.toMap(),
       };
 
   factory Order.fromMap(Map<String, dynamic> map) {
@@ -105,6 +109,9 @@ class Order {
       ),
       totalAmount: (map['totalAmount'] ?? 0.0).toDouble(),
       advanceAmount: (map['advanceAmount'] ?? 0.0).toDouble(),
+      rentalAgreement: map['rentalAgreement'] != null
+          ? RentalAgreement.fromMap(map['rentalAgreement'])
+          : null,
     );
   }
 
